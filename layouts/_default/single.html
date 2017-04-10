@@ -1,0 +1,16 @@
+{{partial "header.html" .}}
+<header>
+<h1>{{.Title}}</h1>
+<time>{{.Date.Format "2006-01-02"}}</time>
+</header>
+{{.Content}}
+<hr>
+<nav>
+{{if .PrevInSection}}
+  <p>Previous: <a href="{{.PrevInSection.Permalink}}">{{.PrevInSection.Title}}</a></p>
+{{end}}
+{{if .NextInSection}}
+  <p>Next: <a href="{{.NextInSection.Permalink}}">{{.NextInSection.Title}}</a></p>
+{{end}}
+</nav>
+{{partial "footer.html" .}}

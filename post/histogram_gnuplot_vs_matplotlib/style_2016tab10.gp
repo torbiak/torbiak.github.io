@@ -1,0 +1,11 @@
+# From https://www.tableau.com/about/blog/2016/7/colors-upgrade-tableau-10-56782
+set for [i=1:64:10]  linetype i lc rgb '#4e79a7'
+set for [i=2:64:10]  linetype i lc rgb '#59a14f'
+set for [i=3:64:10]  linetype i lc rgb '#9c755f'
+set for [i=4:64:10]  linetype i lc rgb '#f28e2b'
+set for [i=5:64:10]  linetype i lc rgb '#edc947'
+set for [i=6:64:10]  linetype i lc rgb '#bab0ac'
+set for [i=7:64:10]  linetype i lc rgb '#e15759'
+set for [i=8:64:10]  linetype i lc rgb '#b07aa1'
+set for [i=9:64:10]  linetype i lc rgb '#76b7b2'
+set for [i=10:64:10] linetype i lc rgb '#ff9da7'

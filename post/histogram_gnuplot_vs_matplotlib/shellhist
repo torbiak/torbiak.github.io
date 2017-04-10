@@ -1,0 +1,754 @@
+ 9911  2017-06-27T20:32:15 man perlrun
+ 9912  2017-06-27T20:33:16 echo -e 'a\n\nb\nc\n\nd'
+ 9913  2017-06-27T20:34:10 echo -e 'a\n\nb\nc\n\nd' | perl -000 -pe 'print "-";'
+ 9914  2017-06-27T20:34:17 echo -e 'a\n\nb\nc\n\nd' | perl -00 -pe 'print "-";'
+ 9915  2017-06-27T20:34:42 man perl
+ 9916  2017-06-27T20:34:44 man perlrun
+ 9917  2017-06-27T20:35:38 echo -e 'a\n\nb\nc\n\nd' | perl -00777 -pe 'print "-";'
+ 9918  2017-06-27T20:35:43 echo -e 'a\n\nb\nc\n\nd' | perl -0777 -pe 'print "-";'
+ 9919  2017-06-27T20:35:52 man ascii
+ 9920  2017-06-27T20:36:02 man perlrun
+ 9921  2017-06-27T21:12:26 man perlre
+ 9922  2017-06-27T21:14:29 echo -e 'a\n\nb\nc\n\nd' | perl -00 -pe 'BEGIN {$i = 1} s/\d+=/$i=/g; $i++;'
+ 9923  2017-06-27T21:14:43 cat >rah
+ 9924  2017-06-27T21:14:54 cat rah | perl -00 -pe 'BEGIN {$i = 1} s/\d+=/$i=/g; $i++;'
+ 9925  2017-06-27T21:14:58 vim rah
+ 9926  2017-06-27T21:15:07 cat rah | perl -00 -pe 'BEGIN {$i = 1} s/\d+=/$i=/g; $i++;'
+ 9927  2017-06-27T21:20:25 cat rah
+ 9928  2017-06-27T21:20:37 perl -00 -pe 'BEGIN {$i = 1} s/\d+=/$i=/g; $i++;' rah
+ 9929  2017-06-27T21:20:57 vim
+ 9930  2017-06-27T21:30:41 perl -00 -pe 'BEGIN {$i = 1} s/\d+=/$i++=/g;' rah
+ 9931  2017-06-27T21:30:47 perl -00 -pe 'BEGIN {$i = 1} s/\d+=/$i=/g; $i++' rah
+ 9932  2017-06-27T23:24:07 go get -u github.com/marianogappa/chart
+ 9933  2017-06-27T23:24:25 echo -e '1\t2' | chart line
+ 9934  2017-06-28T00:57:25 cd code
+ 9935  2017-06-28T00:57:28 mkdir gnuplot
+ 9936  2017-06-28T00:57:29 cd gnuplot
+ 9937  2017-06-28T00:58:31 gnuplot -persist -e "set title ’Sine curve’; plot sin(x)"
+ 9938  2017-06-28T00:58:47 gnuplot -v
+ 9939  2017-06-28T00:59:03 gnuplot -persist -e "set title ’Sine curve’; plot sin(x)"
+ 9940  2017-06-28T00:59:14 gnuplot -persist -e "set title sine; plot sin(x)"
+ 9941  2017-06-28T00:59:18 gnuplot -persist -e "set title; plot sin(x)"
+ 9942  2017-06-28T00:59:46 gnuplot -persist -e "set title hi; plot sin(x)"
+ 9943  2017-06-28T00:59:52 gnuplot -persist -e 'set title "hi"; plot sin(x)'
+ 9944  2017-06-28T01:01:11 gnuplot -e 'set title "hi"; set term png size 1000,1000; plot sin(x)'
+ 9945  2017-06-28T01:01:20 gnuplot -e 'set title "hi"; set term png size 1000,1000; plot sin(x)' > rah.png
+ 9946  2017-06-28T01:01:26 meh rah.png
+ 9947  2017-06-28T01:01:34 man meh
+ 9948  2017-06-28T01:01:40 meh rah.png
+ 9949  2017-06-28T01:01:46 qiv rah.png
+ 9950  2017-06-28T01:02:21 gnuplot -e 'set title "hi"; set term png size 600,600; plot sin(x)' > rah.png
+ 9951  2017-06-28T01:02:22 qiv rah.png
+ 9952  2017-06-28T01:03:05 gnuplot -e 'set title "hi"; plot sin(x)'
+ 9953  2017-06-28T01:03:16 gnuplot -e 'set title "hi"; set term ascii; plot sin(x)'
+ 9954  2017-06-28T01:03:22 gnuplot -e 'set title "hi"; set term text; plot sin(x)'
+ 9955  2017-06-28T01:03:31 man gnuplot
+ 9956  2017-06-28T01:17:17 gnuplot help plot
+ 9957  2017-06-28T01:17:23 gnuplot
+ 9958  2017-06-28T01:22:30 pf ord
+ 9959  2017-06-28T01:22:42 perl -de 42
+ 9960  2017-06-28T01:23:19 perl -e 'for $i (1..20) { print $i, $i*$i, chr(ord('a') + $i, "\n";}'
+ 9961  2017-06-28T01:23:24 perl -e 'for $i (1..20) { print $i, $i*$i, chr(ord('a') + $i), "\n";}'
+ 9962  2017-06-28T01:23:36 perl -e '$,="\t"; for $i (1..20) { print $i, $i*$i, chr(ord('a') + $i), "\n";}'
+ 9963  2017-06-28T01:23:45 perl -e '$,="\t"; for $i (1..20) { print $i, $i*$i, chr(ord('a') + $i), "\n";}' >squares
+ 9964  2017-06-28T01:24:22 gnuplot -persist -e 'plot "squares" using 1:2'
+ 9965  2017-06-28T01:25:23 perl -e '$,="\t"; for $i (1..20) { print $i, $i*$i, chr(ord('a') - 1 + $i), "\n";}' >squares
+ 9966  2017-06-28T01:25:26 gnuplot -persist -e 'plot "squares" using 1:2'
+ 9967  2017-06-28T01:25:43 cat squares 
+ 9968  2017-06-28T01:25:51 gnuplot -persist -e 'plot "squares" using 0:1'
+ 9969  2017-06-28T01:26:22 gnuplot -persist -e 'plot "squares" using 1:2'
+ 9970  2017-06-28T01:27:19 perl -e '$,="\t"; for $i (1..20) { print $i, $i*$i "\n";}' >squares
+ 9971  2017-06-28T01:27:22 perl -e '$,="\t"; for $i (1..20) { print $i, $i*$i, "\n";}' >squares
+ 9972  2017-06-28T01:27:25 gnuplot -persist -e 'plot "squares" using 1:2'
+ 9973  2017-06-28T01:27:31 gnuplot -persist -e 'plot "squares"'
+ 9974  2017-06-28T01:27:49 cat squares 
+ 9975  2017-06-28T01:28:05 perl -e '$,="\t"; for $i (1..20) { print $i, $i*$i, chr(ord('a') - 1 + $i), "\n";}' >squares
+ 9976  2017-06-28T01:28:15 gnuplot -persist -e 'plot "squares" with labels'
+ 9977  2017-06-28T01:29:01 gnuplot
+ 9978  2017-06-28T01:29:48 gnuplot -persist -e 'set xtics; plot "squares" using 1:2;xticlabels(3)'
+ 9979  2017-06-28T01:29:59 gnuplot -persist -e 'set xtics; plot "squares" using 1:2;xticlabels(3) with linespoints'
+ 9980  2017-06-28T01:30:10 gnuplot -persist -e 'set xtics; plot "squares" using 1:2:xticlabels(3) with linespoints'
+ 9981  2017-06-28T01:30:34 gnuplot -persist -e 'set xtics; plot "squares" using 1:2:xticlabels(3)'
+ 9982  2017-06-28T01:31:47 gnuplot -persist -e 'set xtics; plot 0:410 "squares" using 1:2:xticlabels(3)'
+ 9983  2017-06-28T01:32:13 gnuplot -persist -e 'set xtics; plot [0:410] "squares" using 1:2:xticlabels(3)'
+ 9984  2017-06-28T01:32:21 gnuplot -persist -e 'set xtics; plot [0:21] "squares" using 1:2:xticlabels(3)'
+ 9985  2017-06-28T01:33:14 gnuplot -persist -e 'set xtics; plot [] [:410] "squares" using 1:2:xticlabels(3)'
+ 9986  2017-06-28T01:33:43 gnuplot -persist -e 'set xtics; plot [:+10] "squares" using 1:2:xticlabels(3)'
+ 9987  2017-06-28T01:35:14 gnuplot -persist -e 'set xtics; plot [:410] "squares" using 1:2:xticlabels(3)'
+ 9988  2017-06-28T01:35:30 gnuplot -persist -e 'set xtics; plot [:21] "squares" using 1:2:xticlabels(3)'
+ 9989  2017-06-28T01:35:44 gnuplot -persist -e 'set xtics; plot [:25] "squares" using 1:2:xticlabels(3)'
+ 9990  2017-06-28T01:38:00 gnuplot -persist -e 'set xtics; plot [:25] "squares" using 1:2:xticlabels(3) whatevs'
+ 9991  2017-06-28T01:38:07 gnuplot -persist -e 'set xtics; plot [:25] "squares" using 1:2:xticlabels(3) with labels'
+ 9992  2017-06-28T01:38:26 gnuplot -persist -e 'set label;set xtics; plot [:25] "squares" using 1:2:xticlabels(3);'
+ 9993  2017-06-28T01:38:35 gnuplot -persist -e 'set label "";set xtics; plot [:25] "squares" using 1:2:xticlabels(3);'
+ 9994  2017-06-28T01:39:18 gnuplot -persist -e 'set label "a";set xtics; plot [:25] "squares" using 1:2:xticlabels(3);'
+ 9995  2017-06-28T01:39:36 gnuplot -persist -e 'set label "a" at screen 0.5,0.5;set xtics; plot [:25] "squares" using 1:2:xticlabels(3);'
+ 9996  2017-06-28T01:43:19 gnuplot -persist -e 'set label "a" at screen 0.5,0.5;set xtics; plot [:25] "squares" notitle using 1:2:xticlabels(3);'
+ 9997  2017-06-28T01:43:33 gnuplot -persist -e 'set xtics; plot [:25] "squares" notitle using 1:2:xticlabels(3);'
+ 9998  2017-06-28T01:43:42 gnuplot -persist -e 'set xtics; plot "squares" notitle using 1:2:xticlabels(3);'
+ 9999  2017-06-28T01:43:46 gnuplot -persist -e 'set xtics; plot [:25] "squares" notitle using 1:2:xticlabels(3);'
+10000  2017-06-28T01:43:50 gnuplot -persist -e 'set xtics; plot [:21] "squares" notitle using 1:2:xticlabels(3);'
+10001  2017-06-28T01:44:03 gnuplot -persist -e 'set xtics; plot [:21] [:405] "squares" notitle using 1:2:xticlabels(3);'
+10002  2017-06-28T01:44:24 gnuplot -persist -e 'set xtics; plot [:21] [:405] "squares" title "hi" using 1:2:xticlabels(3);'
+10003  2017-06-28T01:45:03 gnuplot -persist -e 'set xtics; plot [:21] [:405] "squares" title at end using 1:2:xticlabels(3);'
+10004  2017-06-28T01:45:12 gnuplot -persist -e 'set xtics; plot [:21] [:405] "squares" at end using 1:2:xticlabels(3);'
+10005  2017-06-28T01:45:21 gnuplot -persist -e 'set xtics; plot [:21] [:405] "squares" at beginning using 1:2:xticlabels(3);'
+10006  2017-06-28T01:45:27 gnuplot -persist -e 'set xtics; plot [:21] [:405] "squares" title at beginning using 1:2:xticlabels(3);'
+10007  2017-06-28T01:45:39 gnuplot -persist -e 'set xtics; plot [:21] [:405] "squares" title "hi" at beginning using 1:2:xticlabels(3);'
+10008  2017-06-28T01:46:25 gnuplot -persist -e 'set key outside; set xtics; plot [:21] [:405] "squares" using 1:2:xticlabels(3);'
+10009  2017-06-28T01:46:45 gnuplot -persist -e 'set key outside bottom; set xtics; plot [:21] [:405] "squares" using 1:2:xticlabels(3);'
+10010  2017-06-28T01:47:37 gnuplot -persist -e 'set key left bottom; set xtics; plot [:21] [:405] "squares" using 1:2:xticlabels(3);'
+10011  2017-06-28T01:48:14 gnuplot -persist -e 'set key left bmargin; set xtics; plot [:21] [:405] "squares" using 1:2:xticlabels(3);'
+10012  2017-06-28T02:00:18 vim squares 
+10013  2017-06-28T02:01:10 gnuplot -persist -e 'set key left bmargin; set xtics; plot [:21] [:405] "squares" using 1:2:xticlabels(3) with title columnhead(2);'
+10014  2017-06-28T02:01:46 gnuplot -persist -e 'set key left bmargin; set xtics; plot [:21] [:405] "squares" using 1:2:xticlabels(3) with lines title columnhead(2);'
+10015  2017-06-28T02:01:54 gnuplot -persist -e 'set key left bmargin; set xtics; plot [:21] [:405] "squares_head" using 1:2:xticlabels(3) with lines title columnhead(2);'
+10016  2017-06-28T02:03:50 perl -e '$,="\t"; print "x", "square", "double", "char", "\n"; for $i (1..20) { print $i, $i*$i, 2*$i, chr(ord('a') - 1 + $i), "\n";}' >series
+10017  2017-06-28T02:04:27 gnuplot -persist -e 'set key bmargin; plot "series"'
+10018  2017-06-28T02:04:40 gnuplot -persist -e 'set key bmargin; plot "series" with lines'
+10019  2017-06-28T02:04:59 gnuplot -persist -e 'set key bmargin; plot "series" using 1:2:3'
+10020  2017-06-28T02:05:43 gnuplot -persist -e 'set key bmargin; plot for [i=2:3] "series" using i title columnhead(i);'
+10021  2017-06-28T02:27:35 gnuplot -persist -e 'set key bmargin autotitle columnhead; plot for [i=2:3] "series";'
+10022  2017-06-28T02:27:56 gnuplot -persist -e 'set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;'
+10023  2017-06-28T02:44:22 gnuplot -persist -e 'set term xterm; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;'
+10024  2017-06-28T02:44:39 gnuplot
+10025  2017-06-28T02:45:58 gnuplot -persist -e 'set term dumb; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;'
+10026  2017-06-28T02:47:44 gnuplot -persist -e 'set term dumb; set key autotitle columnhead; plot for [i=2:3] "series" using i;'
+10027  2017-06-28T02:47:50 gnuplot -persist -e 'set term dumb; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;'
+10028  2017-06-28T02:48:26 gnuplot
+10029  2017-06-28T02:49:07 gnuplot -persist -e 'set term x11; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;'
+10030  2017-06-28T02:49:31 gnuplot -persist -e 'set term xlib; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;'
+10031  2017-06-28T02:49:37 gnuplot -persist -e 'set term x11; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;'
+10032  2017-06-28T02:50:06 gnuplot -persist -e 'set term canvas; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;'
+10033  2017-06-28T02:50:22 gnuplot -persist -e 'set term canvas; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;' >plot.html
+10034  2017-06-28T02:50:54 gnuplot -persist -e 'set term svg; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;' >plot.html
+10035  2017-06-28T02:50:59 gnuplot -persist -e 'set term svg; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;' >plot.svg
+10036  2017-06-28T02:51:01 gnuplot -persist -e 'set term svg; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;' >plot.html
+10037  2017-06-28T02:51:03 gnuplot -persist -e 'set term svg; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;' >plot.svg
+10038  2017-06-28T02:51:08 gnuplot -persist -e 'set term canvas; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i;' >plot.html
+10039  2017-06-28T03:22:14 gnuplot -e 'set term x11; test'
+10040  2017-06-28T03:22:18 gnuplot -persist -e 'set term x11; test'
+10041  2017-06-28T03:23:05 gnuplot -persist -e 'set term x11; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i with linespoints;'
+10042  2017-06-28T03:23:12 gnuplot -persist -e 'set term x11; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i with linespoints lw 4;'
+10043  2017-06-28T03:23:16 gnuplot -persist -e 'set term x11; set key bmargin autotitle columnhead; plot for [i=2:3] "series" using i with linespoints lw 2;'
+10044  2017-06-28T03:24:26 gnuplot -persist -e 'set term x11; plot sin(x) lt 4'
+10045  2017-06-28T03:24:30 gnuplot -persist -e 'set term x11; plot sin(x) lw 4'
+10046  2017-06-28T03:24:37 gnuplot -persist -e 'set term x11; plot sin(x) lw 4 smooth'
+10047  2017-06-28T03:24:43 gnuplot -persist -e 'set term x11; plot sin(x) lw 4 lt smooth'
+10048  2017-06-28T03:30:26 gnuplot -persist -e 'set term x11; plot sin(x) lw 4'
+10049  2017-06-28T03:31:07 gnuplot -persist -e 'set term x11; plot sin(x) lt rgb "violet"'
+10050  2017-06-28T03:31:11 gnuplot -persist -e 'set term x11; plot sin(x) lt rgb "blue"'
+10051  2017-06-28T03:31:17 gnuplot -persist -e 'plot sin(x) lt rgb "blue"'
+10052  2017-06-28T03:31:31 gnuplot -persist -e 'set key bmargin; plot sin(x) lt rgb "blue"'
+10053  2017-06-28T03:32:08 gnuplot -e 'show colornames'
+10054  2017-06-28T03:32:18 gnuplot -persist -e 'set key bmargin; plot sin(x) lt rgb "slategrey"'
+10055  2017-06-28T03:32:23 gnuplot -persist -e 'set key bmargin; plot sin(x) lt rgb "slategrey" lw 2'
+10056  2017-06-28T03:32:26 gnuplot -persist -e 'set key bmargin; plot sin(x) lt rgb "slategrey" lw 4'
+10057  2017-06-28T03:33:06 gnuplot -persist -e 'set key bmargin; plot sin(x) lt rgb "slategrey" lw 4 tc rgb "honeydew"'
+10058  2017-06-28T03:33:42 gnuplot -persist -e 'set key bmargin; plot sin(x) lt rgb "blue"'
+10059  2017-06-28T03:33:49 gnuplot -persist -e 'set monochrome; set key bmargin; plot sin(x) lt rgb "blue"'
+10060  2017-06-28T03:33:54 gnuplot -persist -e 'set monochrome; set key bmargin; plot sin(x)'
+10061  2017-06-28T03:35:03 gnuplot -persist -e 'set term x11 bgnd rgb "yellow"; set monochrome; set key bmargin; plot sin(x)'
+10062  2017-06-28T03:35:15 gnuplot -persist -e 'set term x11 background rgb "yellow"; set key bmargin; plot sin(x)'
+10063  2017-06-28T03:35:25 gnuplot -persist -e 'set term x11 background rgb "white"; set key bmargin; plot sin(x)'
+10064  2017-06-28T03:58:08 vim perday
+10065  2017-06-28T03:59:16 gnuplot -persist -e 'plot "perday" using timecolumn(N, "%s"):2'
+10066  2017-06-28T03:59:33 gnuplot -persist -e 'plot "perday" using (timecolumn(N, "%s")):2'
+10067  2017-06-28T03:59:37 gnuplot -persist -e 'plot "perday" using (timecolumn(1, "%s")):2'
+10068  2017-06-28T03:59:51 gnuplot -persist -e 'plot "perday" using (timecolumn(1, "%s")):2 with labels'
+10069  2017-06-28T04:00:35 gnuplot -persist -e 'set xtics; plot "perday" using (timecolumn(1, "%s")):2:xticlabels(1)'
+10070  2017-06-28T04:03:15 gnuplot -persist -e 'set timefmt "%Y-%m-%d"; set xtics; plot "perday" using (timecolumn(1, "%s")):2:xticlabels(1)'
+10071  2017-06-28T04:03:34 gnuplot -persist -e 'set timefmt "%Y-%m-%d"; set xtics; plot "perday" using 1:2:xticlabels(1)'
+10072  2017-06-28T04:04:28 gnuplot -persist -e 'set xdata time; set timefmt "%Y-%m-%d"; set xtics; plot "perday" using 1:2:xticlabels(1)'
+10073  2017-06-28T04:05:09 gnuplot -persist -e 'set xtics; plot "perday" using timecolumn("%Y-%m-%d"):2:xticlabels(1)'
+10074  2017-06-28T04:05:18 gnuplot -persist -e 'set xtics; plot "perday" using timecolumn(1, "%Y-%m-%d"):2:xticlabels(1)'
+10075  2017-06-28T04:05:26 gnuplot -persist -e 'set xtics; plot "perday" using (timecolumn(1, "%Y-%m-%d")):2:xticlabels(1)'
+10076  2017-06-28T04:05:44 gnuplot -persist -e 'plot "perday" using (timecolumn(1, "%Y-%m-%d")):2'
+10077  2017-06-28T04:06:04 gnuplot -persist -e 'set timefmt "%Y-%m-%d"; plot "perday" using (timecolumn(1, "%Y-%m-%d")):2'
+10078  2017-06-28T04:06:58 gnuplot -persist -e 'set format "%Y-%m-%d"; plot "perday" using (timecolumn(1, "%Y-%m-%d")):2'
+10079  2017-06-28T04:07:05 gnuplot -persist -e 'set tics format "%Y-%m-%d"; plot "perday" using (timecolumn(1, "%Y-%m-%d")):2'
+10080  2017-06-28T04:07:42 gnuplot -persist -e 'set format "%Y-%m-%d" timedate; plot "perday" using (timecolumn(1, "%Y-%m-%d")):2'
+10081  2017-06-28T04:50:16 gnuplot -persist -e 'plot cos(x), sin(x)'
+10082  2017-06-28T04:50:23 gnuplot -persist -e 'plot cos(x), sin(x), tan(x)'
+10083  2017-06-28T04:50:33 gnuplot -persist -e 'plot cos(x), sin(x), tan(x), tanh(x)'
+10084  2017-06-28T04:50:41 gnuplot -persist -e 'plot cos(x), sin(x), tan(x), cosh(x)'
+10085  2017-06-28T04:57:54 gnuplot -persist -e 'plot cos(x), sin(x) with filledcurves'
+10086  2017-06-28T04:58:40 gnuplot -persist -e 'plot cos(x), sin(x) with filledcurves closed'
+10087  2017-06-28T04:58:53 gnuplot -persist -e 'plot cos(x) with filledcurves above sin(x)'
+10088  2017-06-28T04:59:11 gnuplot -persist -e 'plot cos(x) with filledcurves above sin(x)+3'
+10089  2017-06-28T04:59:17 gnuplot -persist -e 'plot cos(x) with filledcurves above (sin(x)+3)'
+10090  2017-06-28T04:59:25 gnuplot -persist -e 'plot cos(x) with filledcurves above x'
+10091  2017-06-28T04:59:33 gnuplot -persist -e 'plot cos(x) with filledcurves above 1'
+10092  2017-06-28T04:59:37 gnuplot -persist -e 'plot cos(x) with filledcurves above 0.5'
+10093  2017-06-28T04:59:45 gnuplot -persist -e 'plot cos(x) with filledcurves above (0.5)'
+10094  2017-06-28T05:00:00 gnuplot -persist -e 'plot cos(x) with filledcurves above sin(x)
+'
+10095  2017-06-28T05:00:14 gnuplot -persist -e 'plot cos(x) with filledcurves above y=sin(x)'
+10096  2017-06-28T05:00:20 gnuplot -persist -e 'plot cos(x) with filledcurves above sin(x)'
+10097  2017-06-28T05:00:31 gnuplot -persist -e 'plot cos(x) with filledcurves above y=sin(x)'
+10098  2017-06-28T05:02:10 history | awk '{print $1}' | sort | uniq
+10099  2017-06-28T05:02:21 history -h
+10100  2017-06-28T05:02:28 help history
+10101  2017-06-28T05:04:23 HISTTIMEFORMAT=%Y-%m-%d history | awk '{print $2}'
+10102  2017-06-28T05:04:35 HISTTIMEFORMAT="%Y-%m-%d " history | awk '{print $2}'
+10103  2017-06-28T05:04:41 HISTTIMEFORMAT="%Y-%m-%d " history | less
+10104  2017-06-28T05:05:06 HISTTIMEFORMAT="%Y-%m-%d " history | awk '{print $3}' | sort | uniq -c
+10105  2017-06-28T05:05:12 HISTTIMEFORMAT="%Y-%m-%d " history | awk '{print $1,$3}' | sort | uniq -c
+10106  2017-06-28T05:05:16 HISTTIMEFORMAT="%Y-%m-%d " history | awk '{print $2,$3}' | sort | uniq -c
+10107  2017-06-28T05:05:24 HISTTIMEFORMAT="%Y-%m-%d " history | awk '{print $2,$3}' | sort | uniq -c | less
+10108  2017-06-28T05:06:05 HISTTIMEFORMAT="%Y-%m-%d " history | awk '$3 ~ /a-z+/ {print $2,$3}' | sort | uniq -c | less
+10109  2017-06-28T05:06:07 man awk
+10110  2017-06-28T05:06:20 HISTTIMEFORMAT="%Y-%m-%d " history | awk '$3 ~ /[a-zA-Z]+/ {print $2,$3}' | sort | uniq -c | less
+10111  2017-06-28T05:06:43 HISTTIMEFORMAT="%Y-%m-%d " history | awk '$3 ~ /^[a-zA-Z]+$/ {print $2,$3}' | sort | uniq -c | less
+10112  2017-06-28T05:08:03 HISTTIMEFORMAT="%Y-%m-%d " history | awk '$3 ~ /^[a-zA-Z]+$/ {print $2,$3}' | sort | uniq -c | less | sort -n
+10113  2017-06-28T05:29:33 man find
+10114  2017-06-28T05:30:09 find ~/ -printf "%s\n" >sizes
+10115  2017-06-28T05:30:16 less sizes
+10116  2017-06-28T05:30:26 find ~/ -type f -printf "%s\n" >sizes
+10117  2017-06-28T05:30:29 less sizes
+10118  2017-06-28T05:34:20 gnuplot -persist -e 'set format xtics gprintf("%B%b"); plot "sizes" with histogram;'
+10119  2017-06-28T05:34:27 gnuplot -persist -e 'set xtics format gprintf("%B%b"); plot "sizes" with histogram;'
+10120  2017-06-28T05:35:55 gnuplot -persist -e 'set xtics format "%B%b"; plot "sizes" with histogram;'
+10121  2017-06-28T05:36:05 gnuplot -persist -e 'set xtics format "%b%B"; plot "sizes" with histogram;'
+10122  2017-06-28T05:36:36 wc -l sizes
+10123  2017-06-28T05:36:53 sort -n sizes | tail
+10124  2017-06-28T06:49:20 gnuplot -persist -e 'set xtics format "%b%B"; plot "sizes" with histogram;'
+10125  2017-06-28T06:49:32 gnuplot -persist -e 'set xtics format "%b%B"; plot "sizes" using 1 with histogram;'
+10126  2017-06-28T06:52:40 for i in {1..10}; do echo $i; done >seq
+10127  2017-06-28T06:52:44 cat seq
+10128  2017-06-28T06:52:53 gnuplot -persist -e 'set xtics format "%b%B"; plot "seq" using 1 with histogram;'
+10129  2017-06-28T06:53:04 gnuplot -persist -e 'plot "seq" with histogram;'
+10130  2017-06-28T06:54:07 gnuplot -persist -e 'plot "seq" with histeps;'
+10131  2017-06-28T06:54:25 gnuplot -persist -e 'plot "seq" [1:10] with histeps;'
+10132  2017-06-28T06:55:14 gnuplot -persist -e 'set xtics format "%b%B"; plot "seq" using 1 with histogram;'
+10133  2017-06-28T06:58:14 vim histogram.gnuplot
+10134  2017-06-28T07:02:08 man gnuplot
+10135  2017-06-28T07:02:24 fg
+10136  2017-06-28T07:02:32 gnuplot -persist histogram.gnuplot 
+10137  2017-06-28T07:02:41 fg
+10138  2017-06-28T07:02:47 gnuplot -persist histogram.gnuplot 
+10139  2017-06-28T07:03:00 fg
+10140  2017-06-28T07:03:17 wc -l sizes
+10141  2017-06-28T07:03:20 fg
+10142  2017-06-28T07:03:35 gnuplot -persist histogram.gnuplot 
+10143  2017-06-28T07:03:57 fg
+10144  2017-06-28T07:06:21 gnuplot -persist histogram.gnuplot 
+10145  2017-06-28T07:06:50 fg
+10146  2017-06-28T07:07:10 gnuplot -persist histogram.gnuplot 
+10147  2017-06-28T07:07:13 fg
+10148  2017-06-28T07:07:20 gnuplot -persist histogram.gnuplot 
+10149  2017-06-28T07:07:23 fg
+10150  2017-06-28T07:07:32 gnuplot -persist histogram.gnuplot 
+10151  2017-06-28T07:07:39 fg
+10152  2017-06-28T07:07:50 gnuplot -persist histogram.gnuplot 
+10153  2017-06-28T07:08:57 fg
+10154  2017-06-28T07:09:17 gnuplot -persist 'plot "sizes" with scatter'
+10155  2017-06-28T07:09:23 gnuplot -persist 'plot "sizes" with scatterplot'
+10156  2017-06-28T07:09:38 gnuplot -persist 'plot "sizes" with dots'
+10157  2017-06-28T07:09:48 gnuplot -persist -e 'plot "sizes" with dots'
+10158  2017-06-28T07:11:56 gnuplot -persist -e 'plot "sizes" using (1.0):1'
+10159  2017-06-28T07:12:09 gnuplot -persist -e 'plot "sizes" using (1.0)'
+10160  2017-06-28T07:12:14 gnuplot -persist -e 'plot "sizes" using (1.0):1'
+10161  2017-06-28T07:12:27 gnuplot -persist -e 'plot "sizes" using (1.0):1 with boxplot'
+10162  2017-06-28T07:13:18 gnuplot -persist -e 'plot "sizes" using (1.0):1:(0.3) with boxplot'
+10163  2017-06-28T07:13:30 gnuplot -persist -e 'plot "sizes" using (1.0):1:(0.3) with boxplot nooutliers'
+10164  2017-06-28T07:13:50 gnuplot -persist -e 'set style boxplot nooutliers; plot "sizes" using (1.0):1:(0.3);'
+10165  2017-06-28T07:14:14 gnuplot -persist -e 'set style boxplot nooutliers; plot "seq" using (1.0):1:(0.3);'
+10166  2017-06-28T07:16:02 gnuplot -persist -e 'set style boxplot nooutliers; plot "sizes" using (1.0):2:(0.3);'
+10167  2017-06-28T07:16:05 gnuplot -persist -e 'set style boxplot nooutliers; plot "sizes" using (1.0):1:(0.3);'
+10168  2017-06-28T07:17:37 gnuplot -persist -e 'set style boxplot nooutliers; set xticlabels; plot "sizes" using (1.0):1:(0.3):xtic("size");'
+10169  2017-06-28T07:17:55 gnuplot -persist -e 'set style boxplot nooutliers; plot "sizes" using (1.0):1:(0.3):xtic("size");'
+10170  2017-06-28T07:18:16 gnuplot -persist -e 'set style boxplot nooutliers; plot [0:2] "sizes" using (1.0):1:(0.3):xtic("size");'
+10171  2017-06-28T07:20:29 fg
+10172  2017-06-28T07:20:35 gnuplot -persist -e 'set style data boxplot nooutliers; plot [0:2] "sizes" using (1.0):1:(0.3):xtic("size");'
+10173  2017-06-28T07:20:42 gnuplot -persist -e 'set style data boxplot ; plot [0:2] "sizes" using (1.0):1:(0.3):xtic("size");'
+10174  2017-06-28T07:20:54 gnuplot -persist -e 'set style data boxplot nooutliers; plot [0:2] "sizes" using (1.0):1:(0.3):xtic("size");'
+10175  2017-06-28T07:20:57 gnuplot -persist -e 'set style boxplot nooutliers; plot [0:2] "sizes" using (1.0):1:(0.3):xtic("size");'
+10176  2017-06-28T07:21:53 gnuplot -persist -e 'set style boxplot nooutliers; plot [0:2] "sizes" using (1.0):1:xtic("size");'
+10177  2017-06-28T07:23:13 gnuplot -persist -e 'set style boxplot nooutliers; plot [0:2] "sizes" using (1.0):1:xtic("size") with boxplot;'
+10178  2017-06-28T07:23:29 gnuplot -persist -e 'plot [0:2] "sizes" using (1.0):1:xtic("size") with boxplot;'
+10179  2017-06-28T07:23:44 gnuplot -persist -e 'set style boxplot nooutliers; plot [0:2] "sizes" using (1.0):1:xtic("size") with boxplot;'
+10180  2017-06-28T07:23:57 gnuplot -persist -e 'set style boxplot nooutliers; plot "sizes" using (1.0):1:xtic("size") with boxplot;'
+10181  2017-06-28T07:24:20 gnuplot -persist -e 'set style boxplot nooutliers; plot "seq" using (1.0):1:xtic("size") with boxplot;'
+10182  2017-06-28T07:25:01 sed '1000q' sizes >sizes1k
+10183  2017-06-28T07:25:12 gnuplot -persist -e 'set style boxplot nooutliers; plot "sizes1k" using (1.0):1:xtic("size") with boxplot;'
+10184  2017-06-28T07:25:48 gnuplot -persist -e 'set style boxplot nooutliers; plot [] [:10000] "sizes1k" using (1.0):1:xtic("size") with boxplot;'
+10185  2017-06-28T07:35:44 fg
+10186  2017-06-28T07:36:13 gnuplot -persist histogram.gnuplot 
+10187  2017-06-28T07:36:26 fg
+10188  2017-06-28T07:36:31 gnuplot -persist histogram.gnuplot 
+10189  2017-06-28T07:36:38 fg
+10190  2017-06-28T07:36:41 gnuplot -persist histogram.gnuplot 
+10191  2017-06-28T07:37:57 fg
+10192  2017-06-28T07:38:06 gnuplot -persist histogram.gnuplot 
+10193  2017-06-28T07:38:37 fg
+10194  2017-06-28T07:38:42 gnuplot -persist histogram.gnuplot 
+10195  2017-06-28T07:40:07 fg
+10196  2017-06-28T07:40:17 gnuplot -persist histogram.gnuplot 
+10197  2017-06-28T07:40:22 fg
+10198  2017-06-28T07:40:54 gnuplot -persist histogram.gnuplot 
+10199  2017-06-28T07:40:56 fg
+10200  2017-06-28T07:43:38 gnuplot -persist histogram.gnuplot 
+10201  2017-06-28T07:43:42 fg
+10202  2017-06-28T07:43:54 gnuplot -persist histogram.gnuplot 
+10203  2017-06-28T07:44:06 fg
+10204  2017-06-28T07:44:19 gnuplot -persist histogram.gnuplot 
+10205  2017-06-28T07:46:13 fg
+10206  2017-06-28T07:46:45 gnuplot -persist -e 'set logscale x; set logscale y; plot "sizes" with dots'
+10207  2017-06-28T07:47:46 less sizes
+10208  2017-06-28T07:47:58 fg
+10209  2017-06-28T07:48:17 gnuplot -persist -e 'set logscale x; set logscale y; plot "sizes" using $1+1 with dots'
+10210  2017-06-28T07:48:23 gnuplot -persist -e 'set logscale x; set logscale y; plot "sizes" using ($1+1) with dots'
+10211  2017-06-28T07:49:01 gnuplot -persist -e 'set logscale x; set logscale y; plot "sizes" using 1:1 with dots'
+10212  2017-06-28T07:49:19 gnuplot -persist -e 'set logscale x; set logscale y; plot "sizes" using (1):1 with dots'
+10213  2017-06-28T07:49:34 gnuplot -persist -e 'set logscale x; set logscale y; plot "sizes" with dots'
+10214  2017-06-28T07:50:39 tac sizes >sizesrev
+10215  2017-06-28T07:50:44 gnuplot -persist -e 'set logscale x; set logscale y; plot "sizesrev" with dots'
+10216  2017-06-28T07:52:08 gnuplot -persist -e 'set ytic format "%b%B"; set logscale x; set logscale y; plot "sizesrev" with dots'
+10217  2017-06-28T07:54:37 gnuplot -persist -e 'set ytic format "%s%c"; set logscale x; set logscale y; plot "sizesrev" with dots'
+10218  2017-06-28T07:55:03 gnuplot -persist -e 'set ytic format "%l%c"; set logscale x; set logscale y; plot "sizesrev" with dots'
+10219  2017-06-28T07:55:30 gnuplot -persist -e 'set ytic format "%S"; set logscale x; set logscale y; plot "sizesrev" with dots'
+10220  2017-06-28T07:56:26 gnuplot -persist -e 'set ytic format "%.0s%c"; set logscale x; set logscale y; plot "sizesrev" with dots'
+10221  2017-06-28T07:57:58 gnuplot -persist -e 'set term x11 size 1600,800; set ytic format "%.0s%c"; set logscale x; set logscale y; plot "sizesrev" with dots'
+10222  2017-06-28T07:58:54 man sed
+10223  2017-06-28T07:59:07 echo 'a' | sed '='
+10224  2017-06-28T08:00:12 man nl
+10225  2017-06-28T08:00:27 nl sizes1k
+10226  2017-06-28T08:00:41 nl sizes >sizes_nr
+10227  2017-06-28T08:00:43 fg
+10228  2017-06-28T08:00:54 gnuplot -persist -e 'set term x11 size 1600,800; set ytic format "%.0s%c"; set logscale x; set logscale y; plot "sizes_nr" with dots'
+10229  2017-06-28T08:01:20 fg
+10230  2017-06-28T08:01:33 gnuplot -persist -e 'set term x11 size 1600,800; set ytic format "%.0s%c"; set logscale x; set logscale y; plot "sizes_nr" using 1:($2+1)with dots'
+10231  2017-06-28T08:01:37 gnuplot -persist -e 'set term x11 size 1600,800; set ytic format "%.0s%c"; set logscale x; set logscale y; plot "sizes_nr" using 1:($2+1) with dots'
+10232  2017-06-28T08:02:20 gnuplot -persist -e 'set term x11 size 1600,800; set ytic format "%.0s%c"; set logscale y; plot "sizes_nr" using 1:($2+1) with dots'
+10233  2017-06-28T08:03:09 gnuplot -persist -e 'set term x11 size 1600,800; set ytic format "%.0s%c"; set logscale y; plot "sizes_nr" using 1:2 with dots'
+10234  2017-06-28T08:03:21 fg
+10235  2017-06-28T08:03:43 gnuplot -persist -e 'plot [0:2] "sizes" using (1.0):1:xtic("size") with boxplot;'
+10236  2017-06-28T08:03:56 gnuplot -persist histogram.gnuplot 
+10237  2017-06-28T08:04:01 fg
+10238  2017-06-28T08:04:07 gnuplot -persist histogram.gnuplot 
+10239  2017-06-28T08:04:10 fg
+10240  2017-06-28T08:05:32 gnuplot -persist histogram.gnuplot 
+10241  2017-06-28T08:05:37 fg
+10242  2017-06-28T08:05:42 gnuplot -persist histogram.gnuplot 
+10243  2017-06-28T08:05:44 fg
+10244  2017-06-28T08:05:56 gnuplot -persist histogram.gnuplot 
+10245  2017-06-28T08:06:00 fg
+10246  2017-06-28T08:06:05 gnuplot -persist histogram.gnuplot 
+10247  2017-06-28T08:06:09 fg
+10248  2017-06-28T08:06:34 gnuplot -persist histogram.gnuplot 
+10249  2017-06-28T08:06:37 fg
+10250  2017-06-28T08:06:39 gnuplot -persist histogram.gnuplot 
+10251  2017-06-28T08:06:45 fg
+10252  2017-06-28T08:16:08 gnuplot -persist histogram.gnuplot 
+10253  2017-06-28T08:16:11 fg
+10254  2017-06-28T08:17:14 gnuplot -persist histogram.gnuplot 
+10255  2017-06-28T08:17:27 fg
+10256  2017-06-28T08:17:43 gnuplot -persist histogram.gnuplot 
+10257  2017-06-28T08:17:46 fg
+10258  2017-06-28T08:18:17 gnuplot -persist histogram.gnuplot 
+10259  2017-06-28T08:18:57 fg
+10260  2017-06-28T08:19:03 gnuplot -persist histogram.gnuplot 
+10261  2017-06-28T08:19:05 fg
+10262  2017-06-28T08:19:25 gnuplot -persist histogram.gnuplot 
+10263  2017-06-28T08:19:27 fg
+10264  2017-06-28T08:19:53 gnuplot -persist histogram.gnuplot 
+10265  2017-06-28T08:19:56 fg
+10266  2017-06-28T08:20:00 gnuplot -persist histogram.gnuplot 
+10267  2017-06-28T08:20:12 fg
+10268  2017-06-28T08:21:09 gnuplot -persist histogram.gnuplot 
+10269  2017-06-28T08:21:11 fg
+10270  2017-06-28T08:21:17 gnuplot -persist histogram.gnuplot 
+10271  2017-06-28T08:21:21 fg
+10272  2017-06-28T08:21:24 gnuplot -persist histogram.gnuplot 
+10273  2017-06-28T08:21:38 fg
+10274  2017-06-28T08:22:38 gnuplot -persist histogram.gnuplot 
+10275  2017-06-28T08:22:40 fg
+10276  2017-06-28T08:22:58 gnuplot -persist histogram.gnuplot 
+10277  2017-06-28T08:23:00 fg
+10278  2017-06-28T08:23:03 gnuplot -persist histogram.gnuplot 
+10279  2017-06-28T08:23:06 fg
+10280  2017-06-28T08:23:13 gnuplot -persist histogram.gnuplot 
+10281  2017-06-28T08:23:23 fg
+10282  2017-06-28T08:24:00 gnuplot -persist histogram.gnuplot 
+10283  2017-06-28T08:24:05 fg
+10284  2017-06-28T08:24:13 gnuplot -persist histogram.gnuplot 
+10285  2017-06-28T08:24:19 fg
+10286  2017-06-28T08:24:26 gnuplot -persist histogram.gnuplot 
+10287  2017-06-28T08:24:40 fg
+10288  2017-06-28T08:24:46 gnuplot -persist histogram.gnuplot 
+10289  2017-06-28T08:24:49 fg
+10290  2017-06-28T08:24:57 gnuplot -persist histogram.gnuplot 
+10291  2017-06-28T08:26:37 fg
+10292  2017-06-28T08:27:28 gnuplot -persist histogram.gnuplot 
+10293  2017-06-28T08:27:41 fg
+10294  2017-06-28T08:28:34 gnuplot -persist histogram.gnuplot 
+10295  2017-06-28T08:28:50 fg
+10296  2017-06-28T08:28:58 gnuplot -persist histogram.gnuplot 
+10297  2017-06-28T08:29:08 fg
+10298  2017-06-28T08:29:16 gnuplot -persist histogram.gnuplot 
+10299  2017-06-28T08:30:12 fg
+10300  2017-06-28T08:31:34 gnuplot -persist histogram.gnuplot 
+10301  2017-06-28T08:31:40 fg
+10302  2017-06-28T08:32:20 gnuplot -persist histogram.gnuplot 
+10303  2017-06-28T08:33:22 fg
+10304  2017-06-28T08:33:26 gnuplot -persist histogram.gnuplot 
+10305  2017-06-28T08:34:15 fg
+10306  2017-06-28T08:34:19 gnuplot -persist histogram.gnuplot 
+10307  2017-06-28T08:34:31 fg
+10308  2017-06-28T08:34:39 gnuplot -persist histogram.gnuplot 
+10309  2017-06-28T08:35:06 fg
+10310  2017-06-28T08:36:07 gnuplot -persist histogram.gnuplot 
+10311  2017-06-28T08:36:14 fg
+10312  2017-06-28T08:36:17 gnuplot -persist histogram.gnuplot 
+10313  2017-06-28T08:36:23 fg
+10314  2017-06-28T08:36:27 gnuplot -persist histogram.gnuplot 
+10315  2017-06-28T08:37:11 fg
+10316  2017-06-28T08:37:17 gnuplot -persist histogram.gnuplot 
+10317  2017-06-28T20:01:27 fg
+10318  2017-06-28T20:02:15 gnuplot -persist histogram.gnuplot 
+10319  2017-06-28T20:02:22 fg
+10320  2017-06-28T20:02:26 gnuplot -persist histogram.gnuplot 
+10321  2017-06-28T20:02:29 fg
+10322  2017-06-28T20:02:32 gnuplot -persist histogram.gnuplot 
+10323  2017-06-28T20:03:55 fg
+10324  2017-06-28T20:03:58 gnuplot -persist histogram.gnuplot 
+10325  2017-06-28T20:04:16 fg
+10326  2017-06-28T20:04:31 gnuplot -persist histogram.gnuplot 
+10327  2017-06-28T20:10:00 fg
+10328  2017-06-28T20:14:27 gnuplot -persist histogram.gnuplot 
+10329  2017-06-28T20:14:30 fg
+10330  2017-06-28T20:14:42 gnuplot -persist histogram.gnuplot 
+10331  2017-06-28T20:14:56 fg
+10332  2017-06-28T20:19:17 history | grep gnuplot >hist
+10333  2017-06-28T20:19:20 less hist
+10334  2017-06-28T20:19:35 sort hist | uniq >hist.uniq
+10335  2017-06-28T20:19:39 mv hist.uniq hist
+10336  2017-06-28T20:19:40 less hist
+10337  2017-06-28T20:20:10 HISTTIMEFORMAT= history | grep gnuplot | sort | uniq >hist
+10338  2017-06-28T20:20:12 less hist
+10339  2017-06-28T20:20:24 HISTTIMEFORMAT=" " history | grep gnuplot | sort | uniq >hist
+10340  2017-06-28T20:20:25 less hist
+10341  2017-06-28T20:20:58 history | sed 's/^\d+//' | grep gnuplot | sort | uniq >hist
+10342  2017-06-28T20:21:00 less hist
+10343  2017-06-28T20:21:07 history | sed 's/^[0-9]+//' | grep gnuplot | sort | uniq >hist
+10344  2017-06-28T20:21:09 less hist
+10345  2017-06-28T20:21:25 history | sed -r 's/^[0-9]+//' | grep gnuplot | sort | uniq >hist
+10346  2017-06-28T20:21:27 less hist
+10347  2017-06-28T20:21:48 history | sed -r 's/^ *[0-9]*//' | grep gnuplot | sort | uniq >hist
+10348  2017-06-28T20:21:50 less hist
+10349  2017-06-28T20:21:57 history | sed -r 's/^ *[0-9]* *//' | grep gnuplot | sort | uniq >hist
+10350  2017-06-28T20:21:59 less hist
+10351  2017-06-28T20:22:07 fg
+10352  2017-06-28T20:22:37 gnuplot -persist -e 'plot [-3:3] [-3:3] sin(x)'
+10353  2017-06-28T21:09:05 gnuplot -persist -e 'plot "seq" with histogram'
+10354  2017-06-28T21:09:22 gnuplot -persist -e 'plot "seq" with histeps'
+10355  2017-06-28T21:09:42 gnuplot -persist -e 'plot [1:] "seq" with histeps'
+10356  2017-06-28T21:09:49 gnuplot -persist -e 'plot [2:] "seq" with histeps'
+10357  2017-06-28T21:10:02 gnuplot -persist -e 'plot "seq" with histogram'
+10358  2017-06-28T21:12:19 gnuplot -persist -e 'plot "seq" using ("abcdefghijkl"[int($1):int($1)) with labels'
+10359  2017-06-28T21:12:26 gnuplot -persist -e 'plot "seq" using ("abcdefghijkl"[int($1):int($1)]) with labels'
+10360  2017-06-28T21:12:31 gnuplot -persist -e 'plot "seq" using 1:("abcdefghijkl"[int($1):int($1)]) with labels'
+10361  2017-06-28T21:12:39 gnuplot -persist -e 'plot "seq" using 1:1:("abcdefghijkl"[int($1):int($1)]) with labels'
+10362  2017-06-28T21:13:12 gnuplot -persist -e 'plot [0:] [0:] "seq" using 1:1:("abcdefghijkl"[int($1):int($1)]) with labels'
+10363  2017-06-28T21:13:20 gnuplot -persist -e 'plot [0:11] [0:11] "seq" using 1:1:("abcdefghijkl"[int($1):int($1)]) with labels'
+10364  2017-06-29T00:46:04 fg
+10365  2017-06-29T00:46:31 gnuplot -persist -e 'set logscale x; plot "sizes" with dots;'
+10366  2017-06-29T00:46:42 gnuplot -persist -e 'set logscale y; plot "sizes" with dots;'
+10367  2017-06-29T00:46:51 gnuplot -persist -e 'set logscale y; plot "sizes" with points;'
+10368  2017-06-29T00:47:18 gnuplot -persist -e 'set logscale y; set pointsize 3; plot "sizes" with points;'
+10369  2017-06-29T02:34:07 gnuplot -persist -e 'plot 'seq' smooth freq'
+10370  2017-06-29T02:34:12 gnuplot -persist -e 'plot "seq" smooth freq'
+10371  2017-06-29T02:34:35 gnuplot -persist -e 'plot "seq" using 1:(1.0)smooth freq'
+10372  2017-06-29T02:34:39 gnuplot -persist -e 'plot "seq" using 1:(1.0) smooth freq'
+10373  2017-06-29T02:35:06 gnuplot -persist -e 'plot "sizes1k" using 1:(1.0) smooth freq'
+10374  2017-06-29T02:35:40 gnuplot -persist -e 'plot "sizes1k" using 1:(1.0) smooth freq with dots'
+10375  2017-06-29T02:35:46 gnuplot -persist -e 'plot "sizes1k" using 1:(1.0) smooth freq with points'
+10376  2017-06-29T02:35:57 gnuplot -persist -e 'plot "sizes" using 1:(1.0) smooth freq with points'
+10377  2017-06-29T02:36:27 uniq -c sizes | sort -n | less
+10378  2017-06-29T02:37:00 sort sizes |uniq -c | sort -n | less
+10379  2017-06-29T02:37:17 man find
+10380  2017-06-29T02:37:33 find ~ -size 12057520b
+10381  2017-06-29T02:37:46 find ~ -size 12057520c
+10382  2017-06-29T02:38:15 ll /home/jtorbiak/code/ext/git/
+10383  2017-06-29T02:38:33 fg
+10384  2017-06-29T02:38:40 gnuplot -persist -e 'plot "sizes" using 1:(1.0) smooth freq with points'
+10385  2017-06-29T02:38:56 gnuplot -persist -e 'set logscale x; set logscale y; plot "sizes" using 1:(1.0) smooth freq with points'
+10386  2017-06-29T02:39:17 gnuplot -persist -e 'set logscale x; set logscale y; plot "sizes" using ($1+1):(1.0) smooth freq with points'
+10387  2017-06-29T02:40:01 gnuplot -persist -e 'set logscale y; plot "sizes" using ($1+1):(1.0) smooth freq with points'
+10388  2017-06-29T02:40:07 gnuplot -persist -e 'set logscale y; plot "sizes" using 1:(1.0) smooth freq with points'
+10389  2017-06-29T02:40:27 gnuplot -persist -e 'set logscale y; plot "sizes" using 1:(1.0) smooth freq with dots'
+10390  2017-06-29T02:40:36 gnuplot -persist -e 'plot "sizes" using 1:(1.0) smooth freq with dots'
+10391  2017-06-29T02:41:04 gnuplot -persist -e 'set logscale x; plot "sizes" using 1:(1.0) smooth freq with dots'
+10392  2017-06-29T02:41:12 gnuplot -persist -e 'set logscale x; plot "sizes" using ($1+1):(1.0) smooth freq with dots'
+10393  2017-06-29T02:41:28 gnuplot -persist -e 'set logscale x; plot "sizes" using ($1+1):(1.0) smooth freq with points'
+10394  2017-06-29T02:55:25 gnuplot -persist -e 'plot "seq" smooth bezier'
+10395  2017-06-29T02:55:34 gnuplot -persist -e 'plot "seq" smooth bezier with linespoints'
+10396  2017-06-29T02:55:46 gnuplot -persist -e 'plot "seq" smooth bezier, "seq"'
+10397  2017-06-29T02:56:02 fg
+10398  2017-06-29T02:56:45 gnuplot -persist -e 'plot "curvy" smooth bezier, "curvy"'
+10399  2017-06-29T02:56:59 gnuplot -persist -e 'plot "curvy" smooth acsplines, "curvy"'
+10400  2017-06-29T02:57:25 gnuplot -persist -e 'plot "curvy" smooth csplines, "curvy"'
+10401  2017-06-29T02:57:41 gnuplot -persist -e 'plot "curvy" smooth msplines, "curvy"'
+10402  2017-06-29T02:57:44 gnuplot -persist -e 'plot "curvy" smooth mcsplines, "curvy"'
+10403  2017-06-29T03:00:11 gnuplot -persist -e 'plot "curvy" smooth cumu, "curvy"'
+10404  2017-06-29T03:01:20 gnuplot -persist -e 'plot "curvy" smooth cnorm, "curvy"'
+10405  2017-06-29T03:01:47 tac curvy >curvy_rev
+10406  2017-06-29T03:01:56 gnuplot -persist -e 'plot "curvyrev" smooth cnorm, "curvyrev"'
+10407  2017-06-29T03:02:02 gnuplot -persist -e 'plot "curvy_rev" smooth cnorm, "curvy_rev"'
+10408  2017-06-29T03:05:40 gnuplot -persist -e 'set grid xtics ytics; plot "curvy_rev" smooth cnorm, "curvy_rev"'
+10409  2017-06-29T03:05:53 gnuplot -persist -e 'set grid xtics ytics mxtics mytics; plot "curvy_rev" smooth cnorm, "curvy_rev"'
+10410  2017-06-29T03:06:07 gnuplot -persist -e 'set grid xtics ytics mxtics; plot "curvy_rev" smooth cnorm, "curvy_rev"'
+10411  2017-06-29T03:14:11 gnuplot -persist -e 'set grid xtics ytics; plot "curvy_rev" smooth cum, "curvy_rev"'
+10412  2017-06-29T03:14:55 gnuplot -persist -e 'set grid xtics ytics; plot "curvy_rev" :(1/5) smooth cum, "curvy_rev"'
+10413  2017-06-29T03:15:07 gnuplot -persist -e 'set grid xtics ytics; plot "curvy_rev" 1:(1/5) smooth cum, "curvy_rev"'
+10414  2017-06-29T03:15:13 gnuplot -persist -e 'set grid xtics ytics; plot "curvy_rev" using 1:(1/5) smooth cum, "curvy_rev"'
+10415  2017-06-29T03:15:29 gnuplot -persist -e 'set grid xtics ytics; plot "curvy_rev" smooth cum using 1:(1/5), "curvy_rev"'
+10416  2017-06-29T03:15:32 gnuplot -persist -e 'set grid xtics ytics; plot "curvy_rev" smooth cum using 1:($1/5), "curvy_rev"'
+10417  2017-06-29T03:15:52 gnuplot -persist -e 'set grid xtics ytics; plot "curvy_rev" using 1:($1/5) smooth cum, "curvy_rev"'
+10418  2017-06-29T03:16:30 gnuplot -persist -e 'set grid xtics ytics; plot "curvy_rev" using :($1/5) smooth cum, "curvy_rev"'
+10419  2017-06-29T03:16:54 gnuplot -persist -e 'set grid xtics ytics; plot "curvy_rev" using 0:($1/5) smooth cum, "curvy_rev"'
+10420  2017-06-29T03:42:32 gnuplot
+10421  2017-06-29T03:44:58 man gnuplot
+10422  2017-06-29T03:45:34 gnuplot
+10423  2017-06-29T03:45:56 ls ~/lib
+10424  2017-06-29T03:46:11 wget https://raw.githubusercontent.com/gnuplot/gnuplot/master/demo/stat.inc
+10425  2017-06-29T03:46:13 fg
+10426  2017-06-29T03:46:17 gnuplot
+10427  2017-06-29T15:19:50 fg
+10428  2017-06-29T17:16:39 reset
+10429  2017-06-29T17:16:40 fg
+10430  2017-06-29T17:17:50 vim dicedist.go 
+10431  2017-06-29T17:25:37 go run dicedist.go 1,2,3
+10432  2017-06-29T17:25:38 fg
+10433  2017-06-29T17:57:34 go run dicedist.go -h
+10434  2017-06-29T17:57:47 fg
+10435  2017-06-29T17:58:05 go run dicedist.go -h
+10436  2017-06-29T17:58:12 fg
+10437  2017-06-29T17:58:22 go run dicedist.go -h
+10438  2017-06-29T17:58:24 fg
+10439  2017-06-29T17:58:29 go run dicedist.go -h
+10440  2017-06-29T17:58:32 fg
+10441  2017-06-29T17:59:39 go run dicedist.go -h
+10442  2017-06-29T17:59:42 fg
+10443  2017-06-29T17:59:47 go run dicedist.go -h
+10444  2017-06-29T17:59:48 go run dicedist.go
+10445  2017-06-29T17:59:57 fg
+10446  2017-06-29T18:02:06 go run dicedist.go
+10447  2017-06-29T18:02:09 fg
+10448  2017-06-29T18:02:14 go run dicedist.go
+10449  2017-06-29T18:02:16 fg
+10450  2017-06-29T18:02:23 go run dicedist.go
+10451  2017-06-29T18:02:53 go run dicedist.go -h
+10452  2017-06-29T18:03:03 go run dicedist.go --help
+10453  2017-06-29T18:03:06 go run dicedist.go -help
+10454  2017-06-29T18:03:38 go run dicedist.go -blah
+10455  2017-06-29T18:05:51 go build dicedist.go 
+10456  2017-06-29T18:05:55 ./dicedist -blah
+10457  2017-06-29T18:05:57 ./dicedist -h
+10458  2017-06-29T18:06:07 ./dicedist -h &>
+10459  2017-06-29T18:06:12 ./dicedist -h 1>&
+10460  2017-06-29T18:06:22 ./dicedist -h 1>-
+10461  2017-06-29T18:06:28 ./dicedist 
+10462  2017-06-29T18:06:30 ./dicedist 2>-
+10463  2017-06-29T18:06:33 man bash
+10464  2017-06-29T18:08:52 ./dicedist 2>-
+10465  2017-06-29T18:09:01 ./dicedist
+10466  2017-06-29T18:09:05 ./dicedist 1,23
+10467  2017-06-29T18:09:07 ./dicedist 1,2,3
+10468  2017-06-29T18:09:12 ./dicedist 1,2,3 1,2,3
+10469  2017-06-29T18:09:15 ./dicedist 1,2,3 1,2,10
+10470  2017-06-29T18:09:30 fg
+10471  2017-06-29T18:09:53 mv dicedist ~/bin
+10472  2017-06-29T18:10:03 rm -- - 
+10473  2017-06-29T18:10:17 man bash
+10474  2017-06-29T18:10:36 dicedist 2>&-
+10475  2017-06-29T18:12:12 echo {1,2,3}
+10476  2017-06-29T18:12:20 echo ""{1,2,3}
+10477  2017-06-29T18:12:35 man bash
+10478  2017-06-29T18:14:22 echo $(echo {1..6} | tr ' ' ',')
+10479  2017-06-29T18:15:59 (IFS=,; echo {1..6})
+10480  2017-06-29T18:16:06 man bash
+10481  2017-06-29T18:18:01 seq -s, 1 6
+10482  2017-06-29T18:18:16 dicedist $(seq -s, 1 6) $(seq -s, 1 6)
+10483  2017-06-29T18:18:43 dicedist $(seq -s, 1 6) $(seq -s, 1 6) >two_dice_dist
+10484  2017-06-29T18:19:07 gnuplot -persist -e 'plot "two_dice_dist" with histogram"
+10485  2017-06-29T18:19:09 gnuplot -persist -e 'plot "two_dice_dist" with histogram'
+10486  2017-06-29T18:19:19 gnuplot -persist -e 'plot "two_dice_dist" with histeps'
+10487  2017-06-29T18:19:33 gnuplot -persist -e 'plot "two_dice_dist" with lines'
+10488  2017-06-29T18:19:47 dicedist $(seq -s, 1 6) $(seq -s, 1 6) | sort -n >two_dice_dist
+10489  2017-06-29T18:19:50 gnuplot -persist -e 'plot "two_dice_dist" with lines'
+10490  2017-06-29T18:20:15 dicedist $(seq -s, 1 6) $(seq -s, 1 6) | sort -n >2d6
+10491  2017-06-29T18:20:53 black=0,1,1,1,2,2; blue=1,1,2,2,2,3; orange=1,2,2,3,3,4
+10492  2017-06-29T18:21:58 dicedist $black $blue | sort -n >blue_black
+10493  2017-06-29T18:22:10 dicedist $black $orange | sort -n >black_orange
+10494  2017-06-29T18:22:26 dicedist $black $black $black | sort -n >3black
+10495  2017-06-29T18:22:54 gnuplot -persist -e 'plot "blue_black", "black_orange", "3black"'
+10496  2017-06-29T18:22:57 gnuplot -persist -e 'plot "blue_black", "black_orange", "3black" with lines'
+10497  2017-06-29T18:23:10 gnuplot -persist -e 'set style lines; plot "blue_black", "black_orange", "3black"'
+10498  2017-06-29T18:23:21 gnuplot
+10499  2017-06-29T18:25:50 gnuplot -persist -e 'set style data lines; plot "blue_black", "black_orange", "3black"'
+10500  2017-06-29T18:26:29 gnuplot -persist -e 'set grid ytic mytic; set style data lines; plot "blue_black", "black_orange", "3black"'
+10501  2017-06-29T18:26:40 gnuplot -persist -e 'set grid ytic mytic 10; set style data lines; plot "blue_black", "black_orange", "3black"'
+10502  2017-06-29T18:26:49 gnuplot -persist -e 'set grid ytic mytic; set mytic 10; set style data lines; plot "blue_black", "black_orange", "3black"'
+10503  2017-06-29T18:26:57 gnuplot -persist -e 'set grid ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black"'
+10504  2017-06-29T18:27:13 gnuplot -persist -e 'set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black"'
+10505  2017-06-29T18:28:29 dicedist $blue $blue | sort -n >2blue
+10506  2017-06-29T18:28:35 gnuplot -persist -e 'set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue"'
+10507  2017-06-29T18:29:13 dicedist $orange $orange | sort -n >2orange
+10508  2017-06-29T18:29:18 gnuplot -persist -e 'set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"'
+10509  2017-06-29T18:30:07 gnuplot -persist -e 'set term x11 size 1600,800; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"'
+10510  2017-06-29T18:30:24 gnuplot -persist -e 'set linewidth 2; set term x11 size 1600,800; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"'
+10511  2017-06-29T18:30:30 gnuplot
+10512  2017-06-29T18:31:55 gnuplot -persist -e 'set linewidth 2; set term x11 size 1600,800; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange" with linewidth 2'
+10513  2017-06-29T18:33:13 gnuplot -persist -e 'set style linewidth 2; set term x11 size 1600,800; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"'
+10514  2017-06-29T18:33:21 gnuplot -persist -e 'set style line lw 2; set term x11 size 1600,800; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"'
+10515  2017-06-29T18:33:33 gnuplot -persist -e 'set style line linewidth 2; set term x11 size 1600,800; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"'
+10516  2017-06-29T18:34:46 gnuplot -persist -e 'set term x11 size 1600,800 linewidth 2; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"'
+10517  2017-06-29T18:36:13 gnuplot -persist -e 'set term x11 size 1600,800 linewidth 2; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"; pause'
+10518  2017-06-29T18:36:29 gnuplot
+10519  2017-06-29T18:36:40 gnuplot -persist -e 'set term x11 size 1600,800 linewidth 2; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"; pause -1'
+10520  2017-06-29T18:37:27 gnuplot -persist -e 'set term x11 size 1600,800 linewidth 2; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"'
+10521  2017-06-29T18:37:43 gnuplot -persist -e 'set term png size 1600,800 linewidth 2; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10522  2017-06-29T18:37:50 qiv dist.png
+10523  2017-06-29T18:39:22 gnuplot -persist -e 'set key box; set term png size 1600,800 linewidth 2; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10524  2017-06-29T18:39:26 qiv dist.png
+10525  2017-06-29T18:40:04 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term png size 1600,800 linewidth 2; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10526  2017-06-29T18:40:08 qiv dist.png
+10527  2017-06-29T18:41:05 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term png size 1200,800 linewidth 2; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10528  2017-06-29T18:41:08 qiv dist.png
+10529  2017-06-29T18:47:10 man qiv
+10530  2017-06-29T18:47:32 qiv -m dist.png
+10531  2017-06-29T18:47:43 man qiv
+10532  2017-06-29T18:48:02 qiv -f dist.png
+10533  2017-06-29T18:48:39 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term png size 1200,800 linewidth 3; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10534  2017-06-29T18:48:43 qiv -f dist.png
+10535  2017-06-29T18:50:44 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term svg linewidth 3; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.svg
+10536  2017-06-29T18:51:09 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term svg linewidth 1; set grid xtic ytic mytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.svg
+10537  2017-06-29T18:52:08 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term svg linewidth 1; set grid xtic ytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.svg
+10538  2017-06-29T18:55:06 gnuplot
+10539  2017-06-29T18:58:06 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo linewidth 1; set grid xtic ytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10540  2017-06-29T18:58:08 qiv -f dist.png
+10541  2017-06-29T18:58:27 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 1; set grid xtic ytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10542  2017-06-29T18:58:29 qiv -f dist.png
+10543  2017-06-29T18:58:42 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 2; set grid xtic ytic; set mytic 5; set style data lines; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10544  2017-06-29T18:58:43 qiv -f dist.png
+10545  2017-06-29T18:59:04 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10546  2017-06-29T18:59:05 qiv -f dist.png
+10547  2017-06-29T18:59:28 gnuplot
+10548  2017-06-29T19:02:18 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style lines pt 7; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10549  2017-06-29T19:02:41 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line pt 7; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10550  2017-06-29T19:02:45 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line * pt 7; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10551  2017-06-29T19:02:54 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line default pt 7; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10552  2017-06-29T19:05:35 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set style line l pt 7}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10553  2017-06-29T19:05:39 qiv -f dist.png
+10554  2017-06-29T19:06:14 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set style line l pt 7}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10555  2017-06-29T19:06:18 qiv -f dist.png
+10556  2017-06-29T19:06:31 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set style line l pointtype 7}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10557  2017-06-29T19:06:33 qiv -f dist.png
+10558  2017-06-29T19:06:59 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set style line @l pointtype 7}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10559  2017-06-29T19:07:15 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [ln=1:10] {set style line ln pointtype 7}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10560  2017-06-29T19:07:17 qiv -f dist.png
+10561  2017-06-29T19:07:26 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [ln=1:10] {set style line ln pointtype 1}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10562  2017-06-29T19:07:27 qiv -f dist.png
+10563  2017-06-29T19:07:46 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [ln=1:10] {set style line ln pointtype 1}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10564  2017-06-29T19:09:14 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line 1 pointtype 7; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10565  2017-06-29T19:09:15 qiv -f dist.png
+10566  2017-06-29T19:09:37 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line 1 pointtype 7; plot "blue_black", "black_orange", "3black", "2blue", "2orange" w ls 1' >dist.png
+10567  2017-06-29T19:09:42 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line 1 pointtype 7; plot "blue_black", "black_orange", "3black", "2blue", "2orange" u ls 1' >dist.png
+10568  2017-06-29T19:09:46 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line 1 pointtype 7; plot "blue_black", "black_orange", "3black", "2blue", "2orange" u lt 1' >dist.png
+10569  2017-06-29T19:09:57 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line 1 pointtype 7; plot "blue_black", "black_orange", "3black", "2blue", "2orange" w lines ls 1' >dist.png
+10570  2017-06-29T19:09:59 qiv -f dist.png
+10571  2017-06-29T19:10:21 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line 1 pointtype 1; plot "blue_black", "black_orange", "3black", "2blue", "2orange" w lines ls 1' >dist.png
+10572  2017-06-29T19:10:22 qiv -f dist.png
+10573  2017-06-29T19:10:29 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line 1 pointtype 2; plot "blue_black", "black_orange", "3black", "2blue", "2orange" w lines ls 1' >dist.png
+10574  2017-06-29T19:10:30 qiv -f dist.png
+10575  2017-06-29T19:10:34 gnuplot
+10576  2017-06-29T19:11:21 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line 1 pointsize 1 pointtype 2; plot "blue_black", "black_orange", "3black", "2blue", "2orange" w lines ls 1' >dist.png
+10577  2017-06-29T19:11:23 qiv -f dist.png
+10578  2017-06-29T19:11:32 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line 1 pointsize 1 pointtype 2; plot "blue_black", "black_orange", "3black", "2blue", "2orange" w lines ls 1 pt 2' >dist.png
+10579  2017-06-29T19:11:38 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set style line 1 pointsize 1 pointtype 2; plot "blue_black", "black_orange", "3black", "2blue", "2orange" w lines ls 1' >dist.png
+10580  2017-06-29T19:12:24 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; set linetype 1 pointtype 7; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10581  2017-06-29T19:12:25 qiv -f dist.png
+10582  2017-06-29T19:12:48 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set linetype l pointtype 7}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10583  2017-06-29T19:12:50 qiv -f dist.png
+10584  2017-06-29T19:13:07 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set linetype l pointtype 7 pointinterval 1}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10585  2017-06-29T19:13:17 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set linetype l pointtype 5 pointinterval 1}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10586  2017-06-29T19:13:18 qiv -f dist.png
+10587  2017-06-29T19:13:22 gnuplot
+10588  2017-06-29T19:13:36 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set linetype l pointtype 6 pointinterval 1}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10589  2017-06-29T19:13:39 qiv -f dist.png
+10590  2017-06-29T19:13:47 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set linetype l pointtype 6 pointinterval 3}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10591  2017-06-29T19:13:49 qiv -f dist.png
+10592  2017-06-29T19:14:35 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set linetype l pointtype 6 pointinterval -1}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10593  2017-06-29T19:14:38 qiv -f dist.png
+10594  2017-06-29T19:15:12 gnuplot -persist -e 'set title "Dark Souls: The Board Game dice distributions"; set key box; set term pngcairo size 1000,800 linewidth 3; set grid xtic ytic; set mytic 5; set style data linespoints; do for [l=1:10] {set linetype l pointtype 6 pointinterval -1}; plot "blue_black", "black_orange", "3black", "2blue", "2orange"' >dist.png
+10595  2017-06-29T19:15:32 vim dicedist.gnuplot 
+10596  2017-06-29T19:16:28 gnuplot dicedist.gnuplot >dist.png
+10597  2017-06-29T19:16:31 fg
+10598  2017-06-29T19:16:33 vim dicedist.gnuplot 
+10599  2017-06-29T19:16:41 gnuplot dicedist.gnuplot >dist.png
+10600  2017-06-29T19:16:43 qiv -f dist.png
+10601  2017-06-29T19:19:46 fg
+10602  2017-06-29T19:19:48 vim dicedist.gnuplot 
+10603  2017-06-29T19:20:02 gnuplot dicedist.gnuplot >dist.png
+10604  2017-06-29T19:20:03 qiv -f dist.png
+10605  2017-06-29T19:21:00 fg
+10606  2017-06-29T19:21:05 gnuplot dicedist.gnuplot >dist.png
+10607  2017-06-29T19:21:06 qiv -f dist.png
+10608  2017-06-29T19:21:09 fg
+10609  2017-06-29T19:21:37 gnuplot dicedist.gnuplot >dist.png
+10610  2017-06-29T19:21:38 qiv -f dist.png
+10611  2017-06-29T23:13:54 printf hi
+10612  2017-06-29T23:14:03 printf hi\n
+10613  2017-06-29T23:14:06 printf 'hi\n'
+10614  2017-06-29T23:14:10 printf "hi\n"
+10615  2017-06-29T23:14:12 echo hi
+10616  2017-06-30T06:16:58 gnuplot
+10617  2017-06-30T06:52:53 qiv -f dist.png
+10618  2017-06-30T06:53:02 vim dicedist.gnuplot 
+10619  2017-06-30T06:53:51 vim ~/.bashrc.local 
+10620  2017-06-30T06:54:06 . ~/rah.sh
+10621  2017-06-30T06:54:16 cat ~/rah.sh 
+10622  2017-06-30T06:54:22 rm ~/rah.sh
+10623  2017-06-30T06:54:40 ls *.gnuplot
+10624  2017-06-30T06:54:53 qiv dist.png
+10625  2017-06-30T06:55:00 . ~/.bash_profile
+10626  2017-06-30T06:55:03 qiv dist.png
+10627  2017-06-30T06:59:08 gnuplot
+10628  2017-06-30T19:34:53 qiv dist.png
+10629  2017-06-30T19:34:58 ls *.png
+10630  2017-06-30T19:35:04 qiv rah.png
+10631  2017-06-30T19:35:10 ls *.svg
+10632  2017-06-30T19:43:42 vim histogram.gnuplot 
+10633  2017-06-30T21:40:05 gnuplot -persist -e 'plot "seq" t "seq" at end'
+10634  2017-06-30T21:40:17 gnuplot -persist -e 'set key off; plot "seq" t "seq" at end'
+10635  2017-06-30T21:40:28 gnuplot -persist -e 'set key off; plot [:12] "seq" t "seq" at end'
+10636  2017-06-30T21:40:35 gnuplot -persist -e 'set key off; plot [:12] [:12] "seq" t "seq" at end'
+10637  2017-06-30T21:40:44 gnuplot -persist -e 'set key off; plot [:12] [:12] "seq" t "seq" at end with lines'
+10638  2017-06-30T21:41:01 gnuplot -persist -e 'set key off; plot [:12] [:12] "seq" t "seq" at beginningwith lines'
+10639  2017-06-30T21:41:06 gnuplot -persist -e 'set key off; plot [:12] [:12] "seq" t "seq" at beginning with lines'
+10640  2017-06-30T21:55:32 vim dicedist.gnuplot 
+10641  2017-06-30T21:56:19 gnuplot dicedist.gnuplot >dist.png
+10642  2017-06-30T21:57:13 gnuplot -persist -e 'plot "seq" with table'
+10643  2017-06-30T21:58:34 gnuplot -persist -e 'set table $d; plot "seq" with table; unset table; plot $d;'
+10644  2017-06-30T22:04:00 gnuplot -persist -e 'set term dumb; test'
+10645  2017-07-01T10:51:30 fg
+10646  2017-07-01T10:51:42 gnuplot
+10647  2017-07-01T11:07:10 fg
+10648  2017-07-01T11:24:10 gnuplot
+10649  2017-07-01T12:08:19 cat quares
+10650  2017-07-01T12:08:21 cat squares
+10651  2017-07-01T12:08:26 gnuplot
+10652  2017-07-01T12:13:49 HISTTIMEFORMAT="%Y-%m-%d " history | awk '$3 ~ /^[a-zA-Z]+$/ {print $2,$3}' | sort | uniq -c | less | sort -n | less
+10653  2017-07-01T12:14:09 HISTTIMEFORMAT="%Y-%m-%dZ%H:%M:%S " history | awk '$3 ~ /^[a-zA-Z]+$/ {print $2,$3}' | sort | uniq -c | less | sort -n | less
+10654  2017-07-01T12:14:44 HISTTIMEFORMAT="%Y-%m-%dZ%H:%M:%S " history | less
+10655  2017-07-01T12:15:34 HISTTIMEFORMAT="%Y-%m-%dZ%H:%M:%S " history | sed 1,10139d >shellhist
+10656  2017-07-01T12:15:37 less shellhist 
+10657  2017-07-01T12:15:50 HISTTIMEFORMAT="%Y-%m-%dZ%H:%M:%S " history | less
+10658  2017-07-01T12:16:13 HISTTIMEFORMAT="%Y-%m-%dZ%H:%M:%S " history | sed 1,1000d >shellhist
+10659  2017-07-01T12:16:20 HISTTIMEFORMAT="%Y-%m-%dZ%H:%M:%S " history | sed 1,1000d |less
+10660  2017-07-01T12:16:36 HISTTIMEFORMAT="%Y-%m-%dZ%H:%M:%S " history | sed 1,10000d |less
+10661  2017-07-01T12:16:51 HISTTIMEFORMAT="%Y-%m-%dZ%H:%M:%S " history | sed 1,9000d |less
+10662  2017-07-01T12:16:59 HISTTIMEFORMAT="%Y-%m-%dZ%H:%M:%S " history | sed 1,9200d |less
+10663  2017-07-01T12:17:05 HISTTIMEFORMAT="%Y-%m-%dZ%H:%M:%S " history | sed 1,9200d >shellhist 

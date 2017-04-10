@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en-US" prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#">
+<head>
+    <meta charset="utf-8">
+
+    {{/*partial "meta.html" .*/}}
+
+    <base href="{{.Site.BaseURL}}">
+    <title>{{.Site.Title}}</title>
+    <link rel="canonical" href="{{.Permalink}}">
+    <link href="{{.RSSLink}}" rel="alternate" type="application/rss+xml" title="{{.Site.Title}}">
+    <link href="/css/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{.Hugo.Generator}}
+    {{template "_internal/opengraph.html" .}}
+    {{template "_internal/google_analytics_async.html" .}}
+    {{partial "favicon"}}
+</head>
+<body lang="en">
+
+<div id="container">
+
+<div class="siteHeader">
+    <a class="siteTitle" href="{{.Site.BaseURL}}">{{.Site.Title}}</a>
+</div>

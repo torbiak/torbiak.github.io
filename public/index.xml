@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title></title>
+    <link>/index.xml</link>
+    <description>Recent content on </description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Wed, 08 Mar 2017 00:00:00 +0000</lastBuildDate>
+    <atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Finding find: Grasping Its Simple Expression Language</title>
+      <link>/post/finding_find/</link>
+      <pubDate>Wed, 08 Mar 2017 00:00:00 +0000</pubDate>
+      
+      <guid>/post/finding_find/</guid>
+      <description>&lt;p&gt;I remember the first time I tried to use the &lt;code&gt;find&lt;/code&gt; command on Linux, over a decade ago. I knew a substring of the name of a file I wanted to find, and found something on the web suggesting I use &lt;code&gt;find&lt;/code&gt;, and was so disappointed when I couldn&amp;rsquo;t just run &lt;code&gt;find $SUBSTR&lt;/code&gt; and get my desired result. &amp;ldquo;Surely such a command exists,&amp;rdquo; I thought. And it basically does, with &lt;code&gt;locate&lt;/code&gt;, but I was searching directories that hadn&amp;rsquo;t been indexed by &lt;code&gt;updatedb&lt;/code&gt; and didn&amp;rsquo;t know enough about globbing and quoting in &lt;code&gt;bash&lt;/code&gt;to effectively give patterns to it. So I did some more searching on the web, learned I needed to give a &lt;code&gt;-name&lt;/code&gt; predicate to find, and typed a lot of commands like the following over the next few years:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;find . -name &amp;quot;*$SUBSTR*&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;[Here I&amp;rsquo;m using &amp;ldquo;predicate&amp;rdquo; to mean a term of an expression. It&amp;rsquo;s the word the GNU manpage uses.]&lt;/p&gt;
+
+&lt;p&gt;Much later, after reading the bash manpage a few times, among other things, I wrote a shell function to make this specific task a bit shorter to type, giving me the command I had wished for years before:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# find files under current directory containing a pattern
+function ff {
+    pattern=${1:?No pattern given}; shift
+    find . -iname &amp;quot;*${pattern}*&amp;quot; &amp;quot;$@&amp;quot; 2&amp;gt;/dev/null
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Eventually I needed to find files based on their modification times and I started using the &lt;code&gt;-mtime&lt;/code&gt; predicate. For example, to find files modified within the past 24 hours (&lt;code&gt;-mtime&lt;/code&gt; takes units of 24 hours):&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;find . -mtime -1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;When using a condition like this, which could potentially match large numbers of uninteresting files, it quickly becomes obvious that further filtering is necessary. &lt;code&gt;egrep -v&lt;/code&gt; can be used for this, but to avoid needlessly traversing directories and wasting time, using the &lt;code&gt;-prune&lt;/code&gt; predicate is desirable. It was difficult to use properly without understanding find&amp;rsquo;s little expression language, though.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;DESCRIPTION&lt;/code&gt; in the manpage for GNU find makes sense now but it meant nothing to me in 2005. &amp;ldquo;&amp;hellip;evaluating the given expression from left to right, according to the rules of precedence, until the outcome is known, at which point find moves on to the next file name.&amp;rdquo; All it means, though, is that you give find a boolean expression composed of predicates and operators, and each file will get tested against it. Each predicate evaluates to true or false, and they are combined with the AND (&lt;code&gt;-a&lt;/code&gt;) and OR (&lt;code&gt;-o&lt;/code&gt;) operators. I don&amp;rsquo;t remember how I came to understand this, but the best explanation I&amp;rsquo;ve seen is in chapter 9 of &lt;a href=&#34;http://shop.oreilly.com/product/9780596003302.do&#34;&gt;Unix Power Tools&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;A few pages down in the manpage, in the &lt;code&gt;EXPRESSION&lt;/code&gt; section, we see there are several classes of predicates: tests, actions, options, and operators. &lt;code&gt;-mtime&lt;/code&gt; and &lt;code&gt;-name&lt;/code&gt; are examples of tests, &lt;code&gt;-print&lt;/code&gt; is the default action, &lt;code&gt;-maxdepth&lt;/code&gt; is an example of an option, and &lt;code&gt;-a&lt;/code&gt; (AND) is the default operator. It might seem weird to include actions and options in a boolean expression of tests, and it is, but it works well. They can be shoehorned in with the tests because they also returning boolean values: most actions always return true, and options always return true. &lt;code&gt;-print&lt;/code&gt;, the most commonly used action, always returns true.&lt;/p&gt;
+
+&lt;p&gt;After grasping this key point, that find is just evaluating a boolean expression, it&amp;rsquo;s easy to write elaborate find commands. Starting with something simple, though:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ls
+bar  foo
+$ find . -name foo -a -print
+./foo
+$ find . -name foo
+./foo
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;find reads the current directory, gets &lt;code&gt;bar&lt;/code&gt;, tests it against &lt;code&gt;-name foo&lt;/code&gt;, which evaluates to false, and short-circuits on the &lt;code&gt;-a&lt;/code&gt; operator, continuing on to &lt;code&gt;foo&lt;/code&gt;, which tests true with &lt;code&gt;-name foo&lt;/code&gt; and so gets printed by &lt;code&gt;-print&lt;/code&gt;. By using find&amp;rsquo;s default action and operator we can type a bit less.&lt;/p&gt;
+
+&lt;p&gt;Back to &lt;code&gt;-prune&lt;/code&gt;. We&amp;rsquo;re still searching for &lt;code&gt;foo&lt;/code&gt;, but let&amp;rsquo;s say there&amp;rsquo;s also a directory we don&amp;rsquo;t want to descend into, called &lt;code&gt;cache&lt;/code&gt;. There&amp;rsquo;s a file called &lt;code&gt;foo&lt;/code&gt; in it so it&amp;rsquo;s easier to tell if it&amp;rsquo;s getting searched.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# List files (-type f) under the working directory.
+$ find . -type f
+./cache/foo
+./bar
+./foo
+
+$ find . -name cache -prune -o -name foo -print
+./foo
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;When find is testing &lt;code&gt;cache&lt;/code&gt;, &lt;code&gt;-name cache&lt;/code&gt; returns true, so &lt;code&gt;-prune&lt;/code&gt; gets run, which removes &lt;code&gt;cache&lt;/code&gt; from the list of directories to descend into and returns true. The return value of the whole expression is then known because the left side of the OR (&lt;code&gt;-o&lt;/code&gt;) is true, so find moves onto the next file. When testing &lt;code&gt;foo&lt;/code&gt;, &lt;code&gt;-name cache&lt;/code&gt; returns false, failing the left side of the OR, so find moves to the right side where &lt;code&gt;-name foo&lt;/code&gt; returns true, resulting in &lt;code&gt;./foo&lt;/code&gt; being printed.&lt;/p&gt;
+
+&lt;p&gt;If an expression doesn&amp;rsquo;t print or execute anything, find treats it as if it were surrounded in parentheses and followed by a print action: &lt;code&gt;( EXPR ) -print&lt;/code&gt;. For example, if we remove &lt;code&gt;-print&lt;/code&gt; from the previous command:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ find . -name cache -prune -o -name foo
+./cache
+./foo
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;cache&lt;/code&gt; gets printed because &lt;code&gt;-prune&lt;/code&gt; returns true, making the overall expression true for it.&lt;/p&gt;
+
+&lt;p&gt;As with many expression languages, parentheses can be used to force precedence. They need to be escaped or quoted so the shell doesn&amp;rsquo;t treat them specially:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ find . -name cache -prune -o \( -name foo -o -name bar \) -print
+./bar
+./foo
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If an expression isn&amp;rsquo;t behaving as expected, &lt;code&gt;-exec&lt;/code&gt; or &lt;code&gt;-printf&lt;/code&gt; can be used to visualize what&amp;rsquo;s actually happening. If portability is important, note that &lt;code&gt;-printf&lt;/code&gt; is a GNU extension and isn&amp;rsquo;t specified in &lt;a href=&#34;http://pubs.opengroup.org/onlinepubs/9699919799/utilities/find.html&#34;&gt;POSIX&lt;/a&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ find . -name cache -printf &amp;quot;pruning %p\n&amp;quot; -prune -o -name foo -print
+pruning ./cache
+./foo
+
+$ find . -name cache -exec echo pruning {} \; -prune -o -name foo -print
+pruning ./cache
+./foo
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;find has a lot of useful tests and actions, so check out the manpage on your system for details. Of the POSIX-specified predicates I&amp;rsquo;ve found &lt;code&gt;-perm&lt;/code&gt;, &lt;code&gt;-user&lt;/code&gt;, and &lt;code&gt;-size&lt;/code&gt; particularly useful, and for GNU extensions I&amp;rsquo;ve frequently used &lt;code&gt;-maxdepth&lt;/code&gt;, &lt;code&gt;-mmin&lt;/code&gt;, &lt;code&gt;-regex&lt;/code&gt;, and &lt;code&gt;-ls&lt;/code&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>/post/failing_mouse_keys/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/post/failing_mouse_keys/</guid>
+      <description>
+
+&lt;h1 id=&#34;failing-to-write-useful-mouse-keys-for-x11&#34;&gt;Failing to Write Useful Mouse Keys for X11&lt;/h1&gt;
+
+&lt;p&gt;I&amp;rsquo;ve stuck with Apple laptops primarily because I haven&amp;rsquo;t had a pleasant trackpad experience on anything else. But about a year ago I noticed I was spending all my time in a web browser and tmux and had disabled or was avoiding many of OSX&amp;rsquo;s features, like the Dock, Dashboard, full-screen apps (due to the lengthy animations), Spotlight (because &lt;code&gt;mdworker&lt;/code&gt; indexing processes have a history of going out of control and pinning CPUs), and iTunes. So I thought I might as well switch to Linux and the &lt;a href=&#34;http://suckless.org&#34;&gt;suckless.org&lt;/a&gt; desktop (&lt;code&gt;dwm&lt;/code&gt;, &lt;code&gt;dmenu&lt;/code&gt;, &lt;code&gt;st&lt;/code&gt;), as long as I could get the trackpad working well enough.&lt;/p&gt;
+
+&lt;p&gt;Initially I had the synaptics touchpad driver installed, but after several hours of fruitless tweakingI gave up on making a usable configuration. It seemed impossible to get enough sensitivity while also adequately ignoring accidental touches using the given configuraiton parameters. So I tried the evdev and libinput drivers and thankfully the libinput driver gives very acceptable behaviour, though it&amp;rsquo;s still a ways off from the magic of Apple&amp;rsquo;s driver, which has never failed to behave as expected when pointing or scrolling.&lt;/p&gt;
+
+&lt;p&gt;Anyway, all this fussing over trackpads made me wonder if controlling the pointer using the keyboard could be a better experience. An efficient enough mouse keys implementation could also be useful for people with trackpad-specific RSI, or in the admittedly rare situations where both a trackpad and mouse are unavailable or infeasible, like if you wanted to control a media PC with only a keyboard.&lt;/p&gt;
+
+&lt;p&gt;I tried out the keypad pointer keys in X11 (&lt;code&gt;setxkbmap -option keypad:pointerkeys&lt;/code&gt;), but they aren&amp;rsquo;t fluid when changing direction and it&amp;rsquo;s a pain to set up pointer keys on keys other than the keypad. Worst of all, accelerating the pointer after a movement key has been pressed down for a while is counter to how I usually point at things: flinging the pointer over to the general area of my target before carefully zeroing in on it. So I started writing my own, calling it &lt;a href=&#34;https://github.com/torbiak/ptrkeys&#34;&gt;&lt;code&gt;ptrkeys&lt;/code&gt;&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Having decided acceleration was the wrong way to make mouse keys efficient, I tried out some schemes where the speed could be changed instantly. My first idea was to have &amp;ldquo;dual-sticks&amp;rdquo;, two sets of directional keys, one for coarse and the other for fine control, but this was surprisingly difficult to use. It was far more intuitive to use WASD for directional control while using the thumb and pinky or the other hand to change the speed using speed multiplier keys.&lt;/p&gt;
+
+&lt;p&gt;dwm served as a model for most of the Xlib interactions I needed to do. Its method of defining X11 key bindings at compile time using C99 struct initializations is surprisingly simple and flexible, and using a similar method has allowed me to try out totally different binding schemes with minimal changes.&lt;/p&gt;
+
+&lt;p&gt;The tricky part was understanding exactly how X11 keyboard grabs work. X generally directs keyboard events to the focused window, but a keyboard can be &amp;ldquo;grabbed&amp;rdquo; as a whole or on a per-key basis so that its events are sent elsewhere. For example, pressing a key implicitly sets up a single-key grab so the subsequent release event is received by the same window that got the keypress. ptrkeys doesn&amp;rsquo;t create a window that can be focused, so a single-key grab is necessary to setup a &amp;ldquo;global hotkey&amp;rdquo; that can be used to enable ptrkeys by grabbing the entire keyboard and thus &amp;ldquo;activating&amp;rdquo; the rest of its configured key bindings.&lt;/p&gt;
+
+&lt;p&gt;Grabs also ended up being the downfall of the project: any full-featured desktop environment grabs the whole keyboard when opening a menu for a taskbar, menubar, or system tray, so that it can be navigated with the keyboard without changing the currently focused window. If ptrkeys already has the keyboard grabbed, the desktop environment&amp;rsquo;s attempt to grab it fails and the menu typically doesn&amp;rsquo;t open. This severely limits the applicability of ptrkeys. And it doesn&amp;rsquo;t seem like there&amp;rsquo;s a way around grabbing the whole keyboard either since a single-key grab becomes a whole-keyboard grab while it&amp;rsquo;s active.&lt;/p&gt;
+
+&lt;p&gt;So, while &lt;code&gt;ptrkeys&lt;/code&gt; likely isn&amp;rsquo;t useful for anyone using a desktop environment like GNONE, KDE, or XFCE, it might be for those using tiling window managers. &lt;a href=&#34;https://github.com/torbiak/ptrkeys&#34;&gt;Check it out on github&lt;/a&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>/post/proto/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/post/proto/</guid>
+      <description>
+
+&lt;h1 id=&#34;getting-started-with-proto&#34;&gt;Getting Started with Proto&lt;/h1&gt;
+
+&lt;p&gt;Dissatisfied with explorer.exe? Find drag-and-drop and manual window placement tedious? Like using the keyboard? Don&amp;rsquo;t want to choose between the hundreds of Norton Commander clones? You should try Proto.&lt;/p&gt;
+
+&lt;p&gt;Proto is a fast, weird, original, keyboard-controlled file manager written by Mieszko Lassota. You get tabs, incremental subsequence filtering everywhere (eg. &amp;lsquo;mp3&amp;rsquo; would match things like &amp;lsquo;my panda &amp;lt;3&amp;rsquo; and &amp;lsquo;badtimes.mp3&amp;rsquo;), renaming using regexes, an application launcher, and a nifty way to select groups of files, even if they&amp;rsquo;re across filters or directories.&lt;/p&gt;
+
+&lt;h1 id=&#34;install&#34;&gt;Install&lt;/h1&gt;
+
+&lt;p&gt;Proto doesn&amp;rsquo;t need to be installed so just put it somewhere comfortable and run the executable.&lt;/p&gt;
+
+&lt;h1 id=&#34;help&#34;&gt;Help&lt;/h1&gt;
+
+&lt;p&gt;We&amp;rsquo;re on Windows, so press F1 to list the key bindings for the current tab. There are different types of tabs (file manager, program launcher, calculator, etc.), but help is context sensitive, bringing up the commands for the current tab. Type some characters to filter the commands[1]. Press Escape to escape help.&lt;/p&gt;
+
+&lt;h1 id=&#34;invoke&#34;&gt;Invoke&lt;/h1&gt;
+
+&lt;p&gt;Once it&amp;rsquo;s running you can call up the Proto window by pressing Alt-` (that&amp;rsquo;s a backtick). This key can be changed in $PROTODIR/Settings/Proto.xml.&lt;/p&gt;
+
+&lt;h1 id=&#34;select&#34;&gt;Select&lt;/h1&gt;
+
+&lt;p&gt;Selected items are prepended by a bullet. If no items are selected the currently highlighted item is used as the selection for commands that take a filepath.&lt;/p&gt;
+
+&lt;p&gt;Space selects the currently highlighted item. Ctrl-a selects all the items, and pressing it again when everying is already selected deselects everything.  Alt-a toggles between selecting all files and directories. Shift-down selects the current item and highlights the next one. Shift-right behaves similarly, but on columns.&lt;/p&gt;
+
+&lt;h1 id=&#34;navigate&#34;&gt;Navigate&lt;/h1&gt;
+
+&lt;p&gt;Use the arrow keys to change which item in the tab is highlighted. To descend into a highlighted directory, press enter. Press backspace to go up a directory. Pressing enter will also open a highlighted file with its default program. Press tab to bring up the launcher and open the highlighted item with a different program. If any items are selected they will be opened instead of the highlighted item.&lt;/p&gt;
+
+&lt;h1 id=&#34;tabs&#34;&gt;Tabs&lt;/h1&gt;
+
+&lt;p&gt;Ctrl-t opens a new file manager tab. Ctrl-shift-t duplicates the current tab. Shift-return opens a directory in a new tab.&lt;/p&gt;
+
+&lt;p&gt;Ctrl-tab, ctrl-shift-tab, ctrl-&lt;arrow&gt;, and ctrl-&lt;number&gt; let you select tabs. Ctrl-w closes a tab. Ctrl-shift-&lt;arrow&gt; reorders a tab.&lt;/p&gt;
+
+&lt;h1 id=&#34;clipboard&#34;&gt;Clipboard&lt;/h1&gt;
+
+&lt;p&gt;Paths can be stored in the clipboard, so you can use a selection in a different directory or tab. Press Ctrl-c to copy the paths of the current selection, overwriting whatever is in the clipboard. Alt-c appends the selection to the clipboard.&lt;/p&gt;
+
+&lt;p&gt;Cut, copy, and paste behave differently in Proto than they do in Explorer. Copy (Ctrl-c) puts paths into the clipboard, and then the clipboard is used as input for the cut and paste commands. Cut (Ctrl-x) moves files to the tab&amp;rsquo;s current location, while paste (Ctrl-v) copies files. So instead of choosing up front whether you&amp;rsquo;re going to move or copy files like in Explorer, in Proto you first choose which paths you want to work with, and then choose whether to copy or move after navigating to the destination.&lt;/p&gt;
+
+&lt;h1 id=&#34;filtering&#34;&gt;Filtering&lt;/h1&gt;
+
+&lt;p&gt;You can type a few characters to filter the contents of a tab using subsequence search. Backspace does what you&amp;rsquo;d expect. Ctrl-Backspace clears the filter. You can&amp;rsquo;t usually have spaces in your filter because the space key selects the current item in the tab.&lt;/p&gt;
+
+&lt;h1 id=&#34;create-destroy-examine&#34;&gt;Create, Destroy, Examine&lt;/h1&gt;
+
+&lt;p&gt;Ctrl-n creates a new directory. Delete deletes the selection. Ctrl-space displays the size of the selection in the lower right.&lt;/p&gt;
+
+&lt;h1 id=&#34;rename&#34;&gt;Rename&lt;/h1&gt;
+
+&lt;p&gt;Ctrl-r lets you rename the highlighted item. Ctrl-Shift-r lets you rename the selection using regular expressions. Captured groups can be accessed in the replacement using $1, $2, etc.&lt;/p&gt;
+
+&lt;h1 id=&#34;launcher&#34;&gt;Launcher&lt;/h1&gt;
+
+&lt;p&gt;The launcher can be invoked from inside or outside of Proto using Ctrl-space. To get Proto to index the Start Menu so the launcher is useful, ensure settings.links.indexMenuStart is set to True in $PROTODIR/Settings/AppLauncher.xml.&lt;/p&gt;
+
+&lt;h1 id=&#34;bookmarks&#34;&gt;Bookmarks&lt;/h1&gt;
+
+&lt;p&gt;Alt-1 opens a tab of bookmarks to your favourite directories and files. Ctrl-b adds a bookmark.&lt;/p&gt;
+
+&lt;h1 id=&#34;find&#34;&gt;Find&lt;/h1&gt;
+
+&lt;p&gt;Proto can search for files using wildcards (* and ?) or regular expressions.&lt;/p&gt;
+
+&lt;p&gt;The grep function doesn&amp;rsquo;t seem to work, unfortunately.
+Ctrl-f
+    Find file by name&lt;/p&gt;
+
+&lt;h1 id=&#34;sorting&#34;&gt;Sorting&lt;/h1&gt;
+
+&lt;p&gt;Ctrl-s
+    Change sort key.
+Ctrl-shift-s
+    Toggle sort order ascending/descending.&lt;/p&gt;
+
+&lt;h1 id=&#34;miscellaneous&#34;&gt;Miscellaneous&lt;/h1&gt;
+
+&lt;p&gt;Ctrl-.
+    Open the windows context menu.
+Ctrl-space
+    Calculate selection size
+Ctrl-End
+    Kill proto job. The current job shows up in the lower left corner of the Proto window.&lt;/p&gt;
+
+&lt;p&gt;[1] Unlike in most of the other tab types, which filter using subsequence search, in help filtering is done by substring.&lt;/p&gt;
+
+&lt;p&gt;f1 for help&lt;/p&gt;
+
+&lt;p&gt;ctrl-h edit text file, quickview image (use arrows for folder slideshow)&lt;/p&gt;
+
+&lt;p&gt;ctrl-g disk space chart&lt;/p&gt;
+
+&lt;p&gt;Regex Rename: use $1 to get at groups&lt;/p&gt;
+
+&lt;p&gt;alt-` invoke&lt;/p&gt;
+
+&lt;p&gt;massive folder creation (useless?)&lt;/p&gt;
+
+&lt;p&gt;Selection:
+shift-arrows &amp;ldquo;select as you go&amp;rdquo;
+space toggle selection of current item
+ctrl-a toggle select-all
+alt-a select all files
+    repeat to select all directories&lt;/p&gt;
+
+&lt;p&gt;line editing:
+ctrl-&lt;backspace&gt; clear line (in most modes, but not filemanager, where it only deletes the last path component)&lt;/p&gt;
+
+&lt;p&gt;ctrl-f find files by name or contents&lt;/p&gt;
+
+&lt;p&gt;sorting:
+ctrl-s sort options
+ctrl-shift-s toggle sort order ascending/descending&lt;/p&gt;
+
+&lt;p&gt;use . and .. to extract to current and parent directory, respectively&lt;/p&gt;
+
+&lt;p&gt;ctrl-p goto path in clipboard
+ctrl-o select paths in clipboard&lt;/p&gt;
+
+&lt;p&gt;escape to cancel
+ctrl-shift-c copy only names (but why?)
+ctrl-c copy item path to clipboard
+ctrl-alt-c copy item contents to clipboard
+alt-c add item path to clipboard
+ctrl-x move paths in clipboard to current dir
+ctrl-v copy paths in clipboard to current dir
+    - if an image is in the clipboard, write it as a new file
+&lt;delete&gt; delete&lt;/p&gt;
+
+&lt;p&gt;ctrl-. windows context menu&lt;/p&gt;
+
+&lt;p&gt;ctrl-r rename
+ctrl-shift-r regex rename&lt;/p&gt;
+
+&lt;p&gt;tabs:
+ctrl-t new tab
+ctrl-shift-t clone tab
+ctrl-enter open in tab&lt;/p&gt;
+
+&lt;p&gt;ctrl-&lt;space&gt; calculate file size
+alt-&lt;space&gt; edit properties
+ctrl-end kill proto job (such as calculating file size)&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
