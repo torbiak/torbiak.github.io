@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en-US" prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#">
+<head>
+    <meta charset="utf-8">
+
+    
+
+    
+    <title>Failing to write useful mouse keys for X11 | Jordan Torbiak</title>
+    
+    <link rel="canonical" href="http://torbiak.com/post/failing_mouse_keys/">
+    
+    <link href="/css/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Hugo 0.145.0">
+    <meta name="twitter:card" content="summary"/>
+    <meta name="description" content="My mouse keys daemon turned out less useful than expected because of X11&#39;s keyboard grab semantics." />
+    <meta property="og:title" content="Failing to write useful mouse keys for X11" />
+<meta property="og:description" content="My mouse keys daemon turned out less useful than expected because of X11&#39;s keyboard grab semantics." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://torbiak.com/post/failing_mouse_keys/" />
+
+  <meta property="og:image" content="http://torbiak.com/img/card.png" />
+
+
+
+<meta property="article:published_time" content="2017-03-07T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2017-03-07T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+    <script type="text/javascript">
+var clicky_site_ids = clicky_site_ids || [];
+clicky_site_ids.push(101075833);
+(function() {
+  var s = document.createElement('script');
+  s.type = 'text/javascript';
+  s.async = true;
+  s.src = '//static.getclicky.com/js';
+  ( document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0] ).appendChild( s );
+})();
+</script>
+
+    <link rel="shortcut icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI
+WXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QMJFy0e6CiFpAAAAGBJREFUOMtjZGBg+M9AAWBhYGBg
+EJDXJ0vzh4cXGZhgnILuZQwF3cuwspHFYHwYYGRgYPhPNRdgs5EQoK4LsPmd5i5gQRbAZeuE0qgB
+dAE+2+kXBvhcQ710QC5gpDQ7AwAZD0ApIa9L1AAAAABJRU5ErkJggg==">
+
+</head>
+<body lang="en">
+
+<div id="container">
+
+<div class="siteHeader">
+    <a class="siteTitle" href="http://torbiak.com/">Jordan Torbiak</a>
+</div>
+
+<header>
+<h1 id="PageTitle">Failing to write useful mouse keys for X11</h1>
+
+<p class="time_meta"><time>2017-03-07</time></p>
+
+</header>
+
+<h1 id="motivation">Motivation</h1>
+<p>I&rsquo;ve stuck with Apple laptops primarily because I haven&rsquo;t had a pleasant trackpad experience on anything else. But about a year ago I noticed I was spending all my time in a web browser and tmux and had disabled or was avoiding many of OSX&rsquo;s features, like the Dock, Dashboard, full-screen apps (due to the lengthy animations), Spotlight (because <code>mdworker</code> indexing processes have a history of going out of control and pinning CPUs), and iTunes. So I thought I might as well switch to Linux and the <a href="http://suckless.org">suckless.org</a> desktop (<code>dwm</code>, <code>dmenu</code>, <code>st</code>), as long as I could get the trackpad working well enough.</p>
+<p>Initially I had the synaptics touchpad driver installed, but after several hours of fruitless tweaking I gave up on making a usable configuration. It seemed impossible to get enough sensitivity while also adequately ignoring accidental touches using the given configuration parameters. So I tried the evdev and libinput drivers and thankfully the libinput driver gives very acceptable behaviour, though it&rsquo;s still a ways off from the magic of Apple&rsquo;s driver, which has never failed to behave as expected when pointing or scrolling.</p>
+<p>Anyway, all this fussing over trackpads made me wonder if controlling the pointer using the keyboard could be a better experience. An efficient enough mouse keys implementation could also be useful for people with trackpad-specific repetitive strain injuries, or in the admittedly rare situations where both a trackpad and mouse are unavailable or infeasible, like if you wanted to control a media PC with only a keyboard.</p>
+<h1 id="existing-solution">Existing solution</h1>
+<p>I tried out the keypad pointer keys in X11 (<code>setxkbmap -option keypad:pointerkeys</code>), but they aren&rsquo;t fluid when changing direction and it&rsquo;s a pain to set up pointer keys on keys other than the keypad. Worst of all, accelerating the pointer after a movement key has been pressed down for a while is counter to how I usually point at things: flinging the pointer over to the general area of my target before carefully zeroing in on it. So I started writing my own, calling it <a href="https://github.com/torbiak/ptrkeys"><code>ptrkeys</code></a>.</p>
+<h1 id="inspiration">Inspiration</h1>
+<p>Having decided acceleration was the wrong way to make mouse keys efficient, I tried out some schemes where the speed could be changed instantly. My first idea was to have &ldquo;dual-sticks&rdquo;, two sets of directional keys, one for coarse and the other for fine control, but this was surprisingly difficult to use. It was far more intuitive to use WASD for directional control while using the thumb and pinky or the other hand to change the speed using speed multiplier keys.</p>
+<p>dwm served as a model for most of the Xlib interactions I needed to do. Its method of defining X11 key bindings at compile time using C99 struct initializations is surprisingly simple and flexible, and using a similar method has allowed me to try out totally different binding schemes with minimal changes.</p>
+<p>The tricky part was understanding exactly how X11 keyboard grabs work. X generally directs keyboard events to the focused window, but a keyboard can be &ldquo;grabbed&rdquo; as a whole or on a per-key basis so that its events are sent elsewhere. For example, pressing a key implicitly sets up a single-key grab so the subsequent release event is received by the same window that got the keypress. ptrkeys doesn&rsquo;t create a window that can be focused, so a single-key grab is necessary to setup a &ldquo;global hotkey&rdquo; that can be used to enable ptrkeys by grabbing the entire keyboard and thus &ldquo;activating&rdquo; the rest of its configured key bindings.</p>
+<h1 id="downfall">Downfall</h1>
+<p>Grabs also ended up being the downfall of the project: any full-featured desktop environment grabs the whole keyboard when opening a menu for a taskbar, menubar, or system tray, so that it can be navigated with the keyboard without changing the currently focused window. If ptrkeys already has the keyboard grabbed, the desktop environment&rsquo;s attempt to grab it fails and the menu typically doesn&rsquo;t open. This severely limits the applicability of ptrkeys. And it doesn&rsquo;t seem like there&rsquo;s a way around grabbing the whole keyboard either since a single-key grab becomes a whole-keyboard grab while it&rsquo;s active.</p>
+<p>So, while <code>ptrkeys</code> likely isn&rsquo;t useful for anyone using a desktop environment like GNOME, KDE, or XFCE, it might be for those using tiling window managers. <a href="https://github.com/torbiak/ptrkeys">Check it out on github</a>.</p>
+
+<hr>
+<nav>
+
+  <p>Previous: <a href="/post/proto/">File management on Windows with Proto</a></p>
+
+
+  <p>Next: <a href="/post/finding_find/">Finding find: grasping its simple expression language</a></p>
+
+</nav>
+<footer class="partwidth">
+  <nav>
+    <div>
+      <a href="/">Home</a></span>
+      
+    </div>
+    <span>&copy;2017</span>
+  </nav>
+</footer>
+
+</div> 
+</body>
+</html>
+

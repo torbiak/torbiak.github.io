@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en-US" prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#">
+<head>
+    <meta charset="utf-8">
+
+    
+
+    
+    <title>File management on Windows with Proto | Jordan Torbiak</title>
+    
+    <link rel="canonical" href="http://torbiak.com/post/proto/">
+    
+    <link href="/css/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Hugo 0.145.0">
+    <meta name="twitter:card" content="summary"/>
+    <meta name="description" content="Everything I&#39;ve needed to know about Proto." />
+    <meta property="og:title" content="File management on Windows with Proto" />
+<meta property="og:description" content="Everything I&#39;ve needed to know about Proto." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://torbiak.com/post/proto/" />
+
+  <meta property="og:image" content="http://torbiak.com/img/card.png" />
+
+
+
+<meta property="article:published_time" content="2017-03-06T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2017-03-06T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+    <script type="text/javascript">
+var clicky_site_ids = clicky_site_ids || [];
+clicky_site_ids.push(101075833);
+(function() {
+  var s = document.createElement('script');
+  s.type = 'text/javascript';
+  s.async = true;
+  s.src = '//static.getclicky.com/js';
+  ( document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0] ).appendChild( s );
+})();
+</script>
+
+    <link rel="shortcut icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI
+WXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QMJFy0e6CiFpAAAAGBJREFUOMtjZGBg+M9AAWBhYGBg
+EJDXJ0vzh4cXGZhgnILuZQwF3cuwspHFYHwYYGRgYPhPNRdgs5EQoK4LsPmd5i5gQRbAZeuE0qgB
+dAE+2+kXBvhcQ710QC5gpDQ7AwAZD0ApIa9L1AAAAABJRU5ErkJggg==">
+
+</head>
+<body lang="en">
+
+<div id="container">
+
+<div class="siteHeader">
+    <a class="siteTitle" href="http://torbiak.com/">Jordan Torbiak</a>
+</div>
+
+<header>
+<h1 id="PageTitle">File management on Windows with Proto</h1>
+
+<p class="time_meta"><time>2017-03-06</time></p>
+
+</header>
+
+<p>Dissatisfied with <code>explorer.exe</code>? Find drag-and-drop and manual window placement tedious? Like using the keyboard? Don&rsquo;t want to choose between the hundreds of Norton Commander clones? You should try <a href="http://miechu.pl/proto/">Proto</a>.</p>
+<p>Proto is a fast, weird, original, keyboard-controlled file manager written by Mieszko Lassota. You get tabs, incremental subsequence filtering everywhere (eg. &lsquo;mp3&rsquo; matches things like &lsquo;my panda &lt;3&rsquo; and &lsquo;badtimes.mp3&rsquo;), renaming using regexes, an application launcher, and a nifty way to select groups of files, even if they&rsquo;re across filters or directories.</p>
+<h1 id="install">Install</h1>
+<p>Proto doesn&rsquo;t seem to use the registry so just put it somewhere comfortable and run the executable.</p>
+<h1 id="help">Help</h1>
+<p>We&rsquo;re on Windows, so press <strong>F1</strong> to get help in the form of key bindings for the current tab. There are different types of tabs, like file manager, program launcher, calculator, etc., and help is context sensitive, bringing up the commands for the current tab. Type some characters to filter the commands. Press <strong>Escape</strong> to escape help.</p>
+<p>Unlike in most of the other tab types which filter by subsequence, in help filtering is done by substring.</p>
+<h1 id="invoke">Invoke</h1>
+<p>Once it&rsquo;s running you can call up the Proto window by pressing <strong>Alt-`</strong> (that&rsquo;s a backtick). This key can be changed in <code>$PROTODIR/Settings/Proto.xml</code>.</p>
+<h1 id="tabs">Tabs</h1>
+<p><strong>Ctrl-t</strong> opens a new file manager tab. <strong>Ctrl-shift-t</strong> duplicates the current tab. <strong>Shift-return</strong> opens a directory in a new tab.</p>
+<p><strong>Ctrl-w</strong> closes a tab.</p>
+<p><strong>Ctrl-tab</strong>, <strong>ctrl-shift-tab</strong>, <strong>ctrl-&lt;arrow&gt;</strong>, and <strong>ctrl-&lt;number&gt;</strong> let you select tabs. <strong>Ctrl-shift-&lt;arrow&gt;</strong> reorders a tab.</p>
+<h1 id="navigate">Navigate</h1>
+<p>Use the arrow keys to change which item in the tab is highlighted. To descend into a highlighted directory, press <strong>enter</strong>. Press <strong>backspace</strong> to go up a directory. Pressing <strong>enter</strong> will also open a highlighted file with its default program. Press <strong>tab</strong> to bring up the launcher and open the highlighted item with a different program. If any items are selected they will be opened instead of the highlighted item.</p>
+<h1 id="select">Select</h1>
+<p>Selected items are prepended by a bullet. If no items are selected the currently highlighted item is used as the selection for commands that take a filepath.</p>
+<p><strong>Space</strong> selects the currently highlighted item. <strong>Ctrl-a</strong> selects all the items, and pressing it again when everying is already selected deselects everything.  <strong>Alt-a</strong> toggles between selecting all files and directories. <strong>Shift-down</strong> selects the current item and highlights the next one. <strong>Shift-right</strong> behaves similarly, but on columns.</p>
+<h1 id="filtering">Filtering</h1>
+<p>You can type a few characters to filter the contents of a tab using subsequence search. <strong>Backspace</strong> does what you&rsquo;d expect. <strong>Ctrl-Backspace</strong> clears the filter. You can&rsquo;t usually have spaces in your filter because the space key selects the current item in the tab.</p>
+<h1 id="file-management">File management</h1>
+<p>Cut, copy, and paste behave differently in Proto than they do in Explorer. Copy (<strong>Ctrl-c</strong>) puts filepaths in the clipboard, and then the clipboard is used as input for the cut and paste commands. Cut (<strong>Ctrl-x</strong>) moves the files in the clipboard to the tab&rsquo;s current location, while paste (<strong>Ctrl-v</strong>) copies files. So instead of choosing up front whether you&rsquo;re going to move or copy files like in Explorer, in Proto you first choose which paths you want to work with, and then choose whether to copy or move after navigating to the destination.</p>
+<p><strong>Alt-c</strong> appends the selection to the clipboard.</p>
+<p><strong>Delete</strong> deletes the selection.</p>
+<p><strong>Ctrl-n</strong> creates a new directory. <strong>Ctrl-space</strong> displays the size of the selection in the lower right.</p>
+<h1 id="rename">Rename</h1>
+<p><strong>Ctrl-r</strong> lets you rename the highlighted item. <strong>Ctrl-Shift-r</strong> lets you rename the selection using regular expressions. Captured groups can be accessed in the replacement using <code>$1</code>, <code>$2</code>, etc.</p>
+<h1 id="launcher">Launcher</h1>
+<p>The launcher can be invoked from inside or outside of Proto using <strong>Alt-space</strong>. To get Proto to index the Start Menu so the launcher is useful, ensure <code>settings.links.indexMenuStart</code> is set to <code>True</code> in <code>$PROTODIR/Settings/AppLauncher.xml</code>.</p>
+<h1 id="bookmarks">Bookmarks</h1>
+<p><strong>Alt-1</strong> opens a tab of bookmarks to your favourite directories and files. <strong>Ctrl-b</strong> adds a bookmark to the highlighted directory.</p>
+<h1 id="find">Find</h1>
+<p><strong>Ctrl-f</strong> searches recursively for files using wildcards (<code>*</code> and <code>?</code>) or regular expressions.</p>
+<p>The grep (&ldquo;Regex search IN files&rdquo;) function doesn&rsquo;t seem to work, unfortunately. It always crashes for me.</p>
+<h1 id="other-shortcuts-i-use">Other shortcuts I use</h1>
+<ul>
+<li><strong>Ctrl-s</strong>: Change sort key.</li>
+<li><strong>Ctrl-.</strong>: Open the windows context menu.</li>
+<li><strong>Ctrl-End</strong>: Kill proto job, such as calculating file size. The current job shows up in the lower left corner of the Proto window.</li>
+<li><strong>Ctrl-h</strong>: edit text file, quickview image (use arrows for folder slideshow)</li>
+<li><strong>Ctrl-g</strong>: disk space chart</li>
+</ul>
+
+<hr>
+<nav>
+
+
+  <p>Next: <a href="/post/failing_mouse_keys/">Failing to write useful mouse keys for X11</a></p>
+
+</nav>
+<footer class="partwidth">
+  <nav>
+    <div>
+      <a href="/">Home</a></span>
+      
+    </div>
+    <span>&copy;2017</span>
+  </nav>
+</footer>
+
+</div> 
+</body>
+</html>
+

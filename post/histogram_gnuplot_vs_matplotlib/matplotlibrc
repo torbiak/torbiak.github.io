@@ -1,0 +1,13 @@
+timezone: America/Edmonton
+
+figure.figsize: 10, 7
+
+text.color: a0caf5
+axes.edgecolor: a0caf5
+axes.facecolor: 101f2f
+xtick.color: a0caf5
+ytick.color: a0caf5
+savefig.edgecolor: 101f2f
+savefig.facecolor: 101f2f
+savefig.pad_inches: 0.2
+savefig.bbox: tight

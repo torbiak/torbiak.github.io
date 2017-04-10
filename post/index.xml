@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Jordan Torbiak</title>
+    <link>http://torbiak.com/post/</link>
+    <description>Recent content in Posts on Jordan Torbiak</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <lastBuildDate>Mon, 07 Apr 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://torbiak.com/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>bash extglob: Tips for using negation/!()</title>
+      <link>http://torbiak.com/post/extglob_negation/</link>
+      <pubDate>Mon, 07 Apr 2025 00:00:00 +0000</pubDate>
+      <guid>http://torbiak.com/post/extglob_negation/</guid>
+      <description>&lt;h1 id=&#34;intro&#34;&gt;Intro&lt;/h1&gt;&#xA;&lt;p&gt;bash&amp;rsquo;s extglob feature enables some additional pattern-matching syntax and brings globbing capabilities a lot closer to typical popular regular expression dialects. In my experience, though, the only extglob operators I&amp;rsquo;ve ever had occasion to use are &lt;code&gt;@(&amp;lt;pat&amp;gt;|...)&lt;/code&gt;, which matches one of the given subpatterns, and &lt;code&gt;!(&amp;lt;pat&amp;gt;|...)&lt;/code&gt;, which matches anything except one of the given subpatterns. &lt;code&gt;@()&lt;/code&gt; is intuitive enough, but in my early experiences with &lt;code&gt;!()&lt;/code&gt; it didn&amp;rsquo;t always behave as I expected, I didn&amp;rsquo;t find any more about it in the docs, and so I mostly gave up on it except for simple cases where it&amp;rsquo;s the only thing in the pattern. And, based on the answers to &lt;a href=&#34;https://superuser.com/questions/210168/how-to-move-files-except-files-with-a-given-suffix-in-bash/1889865#1889865&#34;&gt;this superuser question&lt;/a&gt;, it seems I&amp;rsquo;m not alone.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Using the same colors for the terminal and Vim</title>
+      <link>http://torbiak.com/post/same_colors_in_terminal_and_vim/</link>
+      <pubDate>Thu, 25 Jan 2024 00:00:00 +0000</pubDate>
+      <guid>http://torbiak.com/post/same_colors_in_terminal_and_vim/</guid>
+      <description>&lt;p&gt;In short, I&amp;rsquo;ve settled on a dark 4-bit terminal palette that is readable for the default and black background colors and use other techniques to workaround unreadable foreground/background combinations, which are mostly when two relatively light colors are put together. I do &lt;code&gt;:set t_Co=16&lt;/code&gt; in my vimrc so themes that check it use the terminal palette instead of the absolute 8-bit color model, and use autocommands to modify Vim highlight groups that colorschemes often set to an unreadable combination of my colors. And in the end I wrote a basic colorscheme to suit the terminal colors I chose.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Normalize volume system-wide with PulseAudio</title>
+      <link>http://torbiak.com/post/normalize_volume/</link>
+      <pubDate>Wed, 20 Dec 2023 00:00:00 +0000</pubDate>
+      <guid>http://torbiak.com/post/normalize_volume/</guid>
+      <description>&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;&#xA;&lt;p&gt;I usually watch YouTube videos while I wash dishes, and if videos have very different volume levels it can be either annoying to not understand what&amp;rsquo;s being said or painful to endure loud sounds while I dry my hands so that I can adjust the volume. So I&amp;rsquo;ve been delighted over the past couple years using a compressor filter from &lt;a href=&#34;http://plugin.org.uk/&#34;&gt;Steve Harris&amp;rsquo; LADSPA plugin suite&lt;/a&gt; with PulseAudio to normalize volume for all audio output from my laptop. I&amp;rsquo;m quite willing to trade dynamic range for listening comfort, and for me even music doesn&amp;rsquo;t sound noticeably worse with the compressor filter.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Revisiting pruned approaches</title>
+      <link>http://torbiak.com/post/revisiting_pruned_approaches/</link>
+      <pubDate>Fri, 29 Sep 2017 00:00:00 +0000</pubDate>
+      <guid>http://torbiak.com/post/revisiting_pruned_approaches/</guid>
+      <description>&lt;p&gt;Recently I&amp;rsquo;ve noticed a few cases where I&amp;rsquo;ve been solving a problem and determined that some approach doesn&amp;rsquo;t work, only to get stuck on other approaches too and finally return to the supposedly broken approach and realize that it actually works. Occasionally I&amp;rsquo;ll explicitly set out to rewrite a piece of broken code using the same approach and it&amp;rsquo;ll work and I can compare the two, but for most problems the history will be gone and I&amp;rsquo;m left wondering what I was doing wrong before.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Histograms of timestamped data: gnuplot vs matplotlib</title>
+      <link>http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/</link>
+      <pubDate>Sun, 16 Jul 2017 00:00:00 +0000</pubDate>
+      <guid>http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/</guid>
+      <description>&lt;h1 id=&#34;introduction&#34;&gt;Introduction&lt;/h1&gt;&#xA;&lt;p&gt;I wanted to learn a charting tool that is:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;convenient enough to quickly create rough data visualizations without it feeling like an indulgent digression&lt;/li&gt;&#xA;&lt;li&gt;fast enough to visualize large datasets, maybe millions of points&lt;/li&gt;&#xA;&lt;li&gt;scriptable, so chart source code plays well with version control&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;Without doing much research on the options I decided to start with the venerable gnuplot. Data I&amp;rsquo;ve needed to analyze at previous jobs have always been time series or event streams, so I chose visualizing my bash history as a practice task. After working through a series of charts of increasing sophistication with gnuplot I started worrying that other tools might be more convenient, so I replicated my gnuplot journey with matplotlib. In the end my worries were unfounded and I&amp;rsquo;m actually pretty happy with gnuplot, especially for quick-and-dirty jobs. matplotlib certainly has some advantages, like having a popular, sensible language like Python as its interface, and possibly being an alternative to R when used along with &lt;a href=&#34;http://pandas.pydata.org/pandas-docs/stable/index.html&#34;&gt;pandas&lt;/a&gt;, but gnuplot&amp;rsquo;s brevity is difficult to resist.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Absorb changes across a topic branch in git</title>
+      <link>http://torbiak.com/post/autofixup/</link>
+      <pubDate>Sun, 04 Jun 2017 00:00:00 +0000</pubDate>
+      <guid>http://torbiak.com/post/autofixup/</guid>
+      <description>&lt;h1 id=&#34;motivation-tedious-fixups&#34;&gt;Motivation: tedious fixups&lt;/h1&gt;&#xA;&lt;p&gt;Here&amp;rsquo;s the situation. I&amp;rsquo;m working on a feature and end up with a chain of commits that depend on each other. It&amp;rsquo;d be easier for me as the author to put all the work in a single commit, but I like telling stories with my commits to (hopefully) make reviewing the branch easier and the history more meaningful in general. Anyway, the review goes back and forth for a while, motivating a bunch of small edits that are logically most connected to various commits. I commit these edits separately and then squash/fixup them all with an interactive rebase. Now, assigning changes to commits representing logical groups of changes was fun/challenging the first time, but assigning these small edits born of review feedback is nearly a mechanical process of scanning through the list of topic branch commits and copy-pasting SHAs. [Or, more conveniently, using &lt;code&gt;git commit --fixup=:/&amp;lt;regex&amp;gt;&lt;/code&gt;, although I haven&amp;rsquo;t thought to do that until recently.]&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Finding find: grasping its simple expression language</title>
+      <link>http://torbiak.com/post/finding_find/</link>
+      <pubDate>Wed, 08 Mar 2017 00:00:00 +0000</pubDate>
+      <guid>http://torbiak.com/post/finding_find/</guid>
+      <description>&lt;h1 id=&#34;confusion&#34;&gt;Confusion&lt;/h1&gt;&#xA;&lt;p&gt;I remember the first time I tried to use the &lt;code&gt;find&lt;/code&gt; command on Linux, over a decade ago. I knew a substring of the name of a file I wanted to find, had found something on the web suggesting I use &lt;code&gt;find&lt;/code&gt;, and was so disappointed when I couldn&amp;rsquo;t just run &lt;code&gt;find $SUBSTR&lt;/code&gt; to get my desired result. &amp;ldquo;Surely such a command exists,&amp;rdquo; I thought. And it basically does, with &lt;code&gt;locate&lt;/code&gt;, but I was searching directories that hadn&amp;rsquo;t been indexed by &lt;code&gt;updatedb&lt;/code&gt; and didn&amp;rsquo;t know enough about globbing and quoting in &lt;code&gt;bash&lt;/code&gt; to effectively give patterns to it. So I did some more searching on the web, learned I needed to give a &lt;code&gt;-name&lt;/code&gt; predicate to &lt;code&gt;find&lt;/code&gt;, and typed a lot of commands like the following over the next few years:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Failing to write useful mouse keys for X11</title>
+      <link>http://torbiak.com/post/failing_mouse_keys/</link>
+      <pubDate>Tue, 07 Mar 2017 00:00:00 +0000</pubDate>
+      <guid>http://torbiak.com/post/failing_mouse_keys/</guid>
+      <description>&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;&#xA;&lt;p&gt;I&amp;rsquo;ve stuck with Apple laptops primarily because I haven&amp;rsquo;t had a pleasant trackpad experience on anything else. But about a year ago I noticed I was spending all my time in a web browser and tmux and had disabled or was avoiding many of OSX&amp;rsquo;s features, like the Dock, Dashboard, full-screen apps (due to the lengthy animations), Spotlight (because &lt;code&gt;mdworker&lt;/code&gt; indexing processes have a history of going out of control and pinning CPUs), and iTunes. So I thought I might as well switch to Linux and the &lt;a href=&#34;http://suckless.org&#34;&gt;suckless.org&lt;/a&gt; desktop (&lt;code&gt;dwm&lt;/code&gt;, &lt;code&gt;dmenu&lt;/code&gt;, &lt;code&gt;st&lt;/code&gt;), as long as I could get the trackpad working well enough.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>File management on Windows with Proto</title>
+      <link>http://torbiak.com/post/proto/</link>
+      <pubDate>Mon, 06 Mar 2017 00:00:00 +0000</pubDate>
+      <guid>http://torbiak.com/post/proto/</guid>
+      <description>&lt;p&gt;Dissatisfied with &lt;code&gt;explorer.exe&lt;/code&gt;? Find drag-and-drop and manual window placement tedious? Like using the keyboard? Don&amp;rsquo;t want to choose between the hundreds of Norton Commander clones? You should try &lt;a href=&#34;http://miechu.pl/proto/&#34;&gt;Proto&lt;/a&gt;.&lt;/p&gt;&#xA;&lt;p&gt;Proto is a fast, weird, original, keyboard-controlled file manager written by Mieszko Lassota. You get tabs, incremental subsequence filtering everywhere (eg. &amp;lsquo;mp3&amp;rsquo; matches things like &amp;lsquo;my panda &amp;lt;3&amp;rsquo; and &amp;lsquo;badtimes.mp3&amp;rsquo;), renaming using regexes, an application launcher, and a nifty way to select groups of files, even if they&amp;rsquo;re across filters or directories.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

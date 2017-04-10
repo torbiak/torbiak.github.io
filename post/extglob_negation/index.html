@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en-US" prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#">
+<head>
+    <meta charset="utf-8">
+
+    
+
+    
+    <title>bash extglob: Tips for using negation/!() | Jordan Torbiak</title>
+    
+    <link rel="canonical" href="http://torbiak.com/post/extglob_negation/">
+    
+    <link href="/css/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Hugo 0.145.0">
+    <meta name="twitter:card" content="summary"/>
+    <meta name="description" content="How to use bash extglob negation/!() and avoid its pitfalls." />
+    <meta property="og:title" content="bash extglob: Tips for using negation/!()" />
+<meta property="og:description" content="How to use bash extglob negation/!() and avoid its pitfalls." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://torbiak.com/post/extglob_negation/" />
+
+  <meta property="og:image" content="http://torbiak.com/img/card.png" />
+
+
+
+<meta property="article:published_time" content="2025-04-07T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2025-04-07T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+    <script type="text/javascript">
+var clicky_site_ids = clicky_site_ids || [];
+clicky_site_ids.push(101075833);
+(function() {
+  var s = document.createElement('script');
+  s.type = 'text/javascript';
+  s.async = true;
+  s.src = '//static.getclicky.com/js';
+  ( document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0] ).appendChild( s );
+})();
+</script>
+
+    <link rel="shortcut icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI
+WXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QMJFy0e6CiFpAAAAGBJREFUOMtjZGBg+M9AAWBhYGBg
+EJDXJ0vzh4cXGZhgnILuZQwF3cuwspHFYHwYYGRgYPhPNRdgs5EQoK4LsPmd5i5gQRbAZeuE0qgB
+dAE+2+kXBvhcQ710QC5gpDQ7AwAZD0ApIa9L1AAAAABJRU5ErkJggg==">
+
+</head>
+<body lang="en">
+
+<div id="container">
+
+<div class="siteHeader">
+    <a class="siteTitle" href="http://torbiak.com/">Jordan Torbiak</a>
+</div>
+
+<header>
+<h1 id="PageTitle">bash extglob: Tips for using negation/!()</h1>
+
+<p class="time_meta"><time>2025-04-07</time></p>
+
+</header>
+
+  <aside><nav id="TableOfContents">
+  <ul>
+    <li><a href="#intro">Intro</a></li>
+    <li><a href="#-is-both-non-greedy-and-can-accept-the-empty-string">!() is both non-greedy and can accept the empty string</a></li>
+    <li><a href="#use-cases">Use cases</a></li>
+    <li><a href="#performance-and-other-options">Performance and other options</a></li>
+    <li><a href="#appendix-bash-source-code">Appendix: bash source code</a>
+      <ul>
+        <li><a href="#compiling-the-test-harness-in-globc">Compiling the test harness in <code>glob.c</code></a></li>
+      </ul>
+    </li>
+  </ul>
+</nav></aside>
+
+<h1 id="intro">Intro</h1>
+<p>bash&rsquo;s extglob feature enables some additional pattern-matching syntax and brings globbing capabilities a lot closer to typical popular regular expression dialects. In my experience, though, the only extglob operators I&rsquo;ve ever had occasion to use are <code>@(&lt;pat&gt;|...)</code>, which matches one of the given subpatterns, and <code>!(&lt;pat&gt;|...)</code>, which matches anything except one of the given subpatterns. <code>@()</code> is intuitive enough, but in my early experiences with <code>!()</code> it didn&rsquo;t always behave as I expected, I didn&rsquo;t find any more about it in the docs, and so I mostly gave up on it except for simple cases where it&rsquo;s the only thing in the pattern. And, based on the answers to <a href="https://superuser.com/questions/210168/how-to-move-files-except-files-with-a-given-suffix-in-bash/1889865#1889865">this superuser question</a>, it seems I&rsquo;m not alone.</p>
+<h1 id="-is-both-non-greedy-and-can-accept-the-empty-string">!() is both non-greedy and can accept the empty string</h1>
+<p>The key things to realize about <code>!()</code> is that it can <strong>accept the empty string</strong> and that unlike the other operators it&rsquo;s <strong>non-greedy</strong>. The combination of these attributes means that unless it&rsquo;s at the end of the pattern you need to be careful to force it to eat some of the haystack, by having the following atom not match the empty string.</p>
+<p>For example:</p>
+<pre><code>!(jtor*)  # ok: reject files starting with &quot;jtor&quot;
+!(jtor*)*  # wrong: accepts anything
+!(jtor*)!(*.pdf)  # wrong: equivalent to !(*.pdf)
+!(jtor*).!(*.pdf)  # ok: reject files starting with &quot;jtor&quot; or ending with &quot;.pdf&quot;
+</code></pre>
+<p>Following a <code>!()</code> with <code>*</code> or another <code>!()</code> will always make it accept the empty string. When globbing files, bash tries to match <code>!()</code> against as little of the filename as possible, giving it one more character at a time. For each character it:</p>
+<ul>
+<li>checks if the filename can be rejected at this position by testing each subpattern in <code>!()</code> against the rest of the haystack</li>
+<li>if it can&rsquo;t be rejected at this position of the haystack, then it checks if the filename can be accepted at this position by checking if the rest of the pattern after <code>!()</code> matches the rest of the haystack</li>
+</ul>
+<p>So, if you want <code>!()</code> to eat more, you have to make the following atom fail at earlier positions in the haystack, and thus <code>!(jtor*)*.pdf</code> accepts anything and effectively ignores the <code>!()</code>, while with <code>!(jtor*).pdf</code> the period is going to fail to match in a filename like <code>jtorbiak_resume.pdf</code> until the <code>!()</code> subexpression eats <code>jtorbiak_resume</code>.</p>
+<h1 id="use-cases">Use cases</h1>
+<ul>
+<li>non-test TypeScript files: <code>!(*.test).ts</code></li>
+<li>without a given prefix or suffix: <code>!(jtor*).!(*.pdf)</code></li>
+<li>without either substring: <code>!(*italic*|*thin*)</code></li>
+<li>directories that don&rsquo;t start with given prefix: <code>!(dir*)/</code>
+<ul>
+<li>Sadly, it doesn&rsquo;t seem like you can use a trailing <code>/</code> to match only dirs inside of <code>!()</code>.</li>
+</ul>
+</li>
+<li>with none of these extensions: <code>!(*.svg|*.gp|*.png)</code></li>
+<li>with no extension: <code>!(*.*)</code></li>
+<li>with no extension and without some prefix: <code>!(*.*|jtor*)</code></li>
+</ul>
+<p>A particularly neat but less-readable use of <code>!()</code> is to filter out a subset of a glob by nesting another <code>!()</code>. For example, to find files with an extension but that also don&rsquo;t have some prefix, we can do <code>!(!(*.*)|jtor*)</code>. The double-negative is awkward, but I find it&rsquo;s not so bad if I read it like: exclude files without an extension or that start with &ldquo;jtor&rdquo;.</p>
+<h1 id="performance-and-other-options">Performance and other options</h1>
+<p>While extglob is convenient for interactive use, I would generally avoid using it in scripts since it&rsquo;s not enabled by default and it&rsquo;s more likely to be confusing for others. Also, it&rsquo;s not well-suited for dealing with lots of files since it produces filenames on the command-line, and the max length of a command line isn&rsquo;t huge&mdash;it&rsquo;s only a couple megabytes on my system. And, its performance is poor compared to other options. Some regex engines are optimized such that they have linear time complexity as the haystack scales, by trading off memory to construct a DFA or by doing a Thompson simulation on an NFA (see <a href="https://swtch.com/~rsc/regexp/regexp1.html">Regular Expression Matching Can Be Simple And Fast</a>), but extglob in bash is implemented in a simple recursive way and <code>!()</code> is always going to multiply the amount of backtracking that the rest of the pattern needs to do by the number of characters that it needs to eat. Using <code>find</code>/<code>fd</code> or filtering an overly-accepting glob with a for-loop are often better options.</p>
+<p>I was curious about what scale the performance of globbing could become an issue at. For finding files without extensions in my home directory, looking at ~100k files and matching 33k of them, using <code>find</code> is noticeably faster. I&rsquo;m explicitly pruning dot-dirs from the find command since the glob is implicitly doing so.</p>
+<pre><code>~$ time find . -name &quot;.?*&quot; -prune -o -not -name &quot;*.*&quot; -print | wc -l
+32911
+
+real    0m0.149s
+user    0m0.053s
+sys     0m0.099s
+
+~$ time printf '%s\n' **/!(*.*) | wc -l
+32911
+
+real    0m0.568s
+user    0m0.133s
+sys     0m0.447s
+</code></pre>
+<h1 id="appendix-bash-source-code">Appendix: bash source code</h1>
+<p>The code for extglob is in the bash repo in <code>lib/glob/sm_loop.c</code>. There&rsquo;s a lot of indirection around <code>sm_loop.c</code>, since it gets included by <code>smatch.c</code> twice, with different preprocessor macro definitions for single and multi-byte characters.</p>
+<p>GMATCH and EXTMATCH are mutually recursive, with GMATCH asking EXTMATCH to handle any extglob subexpressions, and EXTMATCH then asking GMATCH to check if each subpattern in an extglob subexpression matches a substring of the haystack. Note that in the outer loop for <code>!()</code> here, <code>srest</code> iterates from <code>s</code> (rest of the haystack) to <code>se</code> (end of the haystack) and  GMATCH is asked to check if the subpattern matches from <code>srest</code> (EXTMATCH&rsquo;s new idea of the rest of the haystack) to <code>s</code>, so on the first iteration it&rsquo;s going to be checking the empty string from <code>s..s</code>.</p>
+<pre tabindex="0"><code>// In EXTMATCH(), from sm_loop.c
+case &#39;!&#39;:           /* match anything *except* one of the patterns */
+  for (srest = s; srest &lt;= se; srest++)
+    {
+      m1 = 0;
+      for (psub = p + 1; ; psub = pnext)
+        {
+          pnext = PATSCAN (psub, pe, L(&#39;|&#39;));
+          /* If one of the patterns matches, just bail immediately. */
+          if (m1 = (GMATCH (s, srest, psub, pnext - 1, NULL, flags) == 0))
+            break;
+          if (pnext == prest)
+            break;
+        }
+      ...
+      if (m1 == 0 &amp;&amp; GMATCH (srest, se, prest, pe, NULL, xflags) == 0)
+        return (0);
+    }
+  return (FNM_NOMATCH);
+</code></pre><h2 id="compiling-the-test-harness-in-globc">Compiling the test harness in <code>glob.c</code></h2>
+<p>If you need to convince yourself that extglob works how you think it does, you can compile bash with <code>DEBUG_MATCHING</code> defined to get debug input whenever <code>GMATCH</code> or <code>EXTMATCH</code> are called. You could use bash as a shell with <code>DEBUG_MATCHING</code> defined but that resulted in a lot of debug messages that I didn&rsquo;t want, so I used the little test harness in <code>glob.c</code>, which just prints the results of matching the patterns given on the command line with the contents of the current directory. <code>glob.c</code> depends on a lot of the same stuff that bash itself does, so it&rsquo;s a lot easier to compile it in the same way that you would <code>bash</code> instead of trying to isolate it. Here&rsquo;s what worked for me.</p>
+<ul>
+<li>
+<p>define <code>DEBUG_MATCHING</code> by giving <code>CFLAGS</code> to configure via an environment variable:</p>
+<p>$ CFLAGS=&rsquo;-g -O2 -DDEBUG_MATCHING&rsquo; ./configure</p>
+</li>
+<li>
+<p>Comment out <code>main()</code> in <code>shell.c</code>, and uncomment <code>main()</code> in <code>glob.c</code></p>
+</li>
+<li>
+<p>fix iteration over the matched values in <code>main()</code> in <code>glob.c</code> by using a different loop variable, since <code>i</code> is already being used to iterate over <code>argv</code></p>
+</li>
+</ul>
+<p>Then, run <code>make</code> and maybe <code>cp bash glob</code> to give the binary a more accurate name. Then it can be run like:</p>
+<pre><code>$ ./glob 'g!(lob)'
+...
+gmatch: string = general.h; se =
+gmatch: pattern = g!(lob); pe =
+extmatch: xc = !
+extmatch: s = eneral.h; se =
+extmatch: p = (lob); pe =
+extmatch: flags = 33
+gmatch: string = eneral.h; se = eneral.h
+...
+</code></pre>
+
+<hr>
+<nav>
+
+  <p>Previous: <a href="/post/same_colors_in_terminal_and_vim/">Using the same colors for the terminal and Vim</a></p>
+
+
+</nav>
+<footer class="partwidth">
+  <nav>
+    <div>
+      <a href="/">Home</a></span>
+      
+    </div>
+    <span>&copy;2017</span>
+  </nav>
+</footer>
+
+</div> 
+</body>
+</html>
+

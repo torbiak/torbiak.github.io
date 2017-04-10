@@ -1,0 +1,26 @@
+{{partial "header.html" .}}
+
+<section class="posts">
+  <h1><a name="posts">Posts</a></h1>
+  {{range where .Data.Pages "Section" "post"}}
+    <p><time>{{.Date.Format "2006-01-02"}}</time>: <a href="{{.URL}}">{{.Title}}</a></p>
+  {{end}}
+</section>
+
+<section>
+  <h1><a name="projects">Projects</a></h1>
+  <p><a href="https://github.com/torbiak/ptrkeys">ptrkeys</a>, fluid mouse keys for X11.</p>
+  <p><a href="https://github.com/torbiak/probe">probe</a>, a pure VimL fuzzy file finder for Vim.</p>
+  <p><a href="https://github.com/torbiak/creeperkeeper">Creeper Keeper</a>, a tool to download Vines and create compilations with subtitles generated from metadata.</p>
+</section>
+
+<section>
+<h1><a name="about">About</a></h1>
+<p>I regularly share links on <a href="https://pinboard.in/u:torbiak/">Pinboard</a> and music on <a href="https://soundcloud.com/torbiak">Soundcloud</a>. Sometimes I post on <a href="https://twitter.com/torbiak">Twitter</a> or <a href="https://www.reddit.com/user/torbiak/">Reddit</a>.</p>
+
+<p>Email: $SURNAME@gmail.com</p>
+
+<p>Powered by <a href="https://gohugo.io/">Hugo</a>. Theme is my own.</p>
+</section>
+
+{{partial "footer.html" .}}

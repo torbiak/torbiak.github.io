@@ -1,0 +1,7 @@
+<ul>
+{{range .Data}}
+  <li>
+    <a href="{{.Params.repoURL}}">{{.Title}}</a>: {{.Description}}
+  </li>
+{{end}}
+</ul>

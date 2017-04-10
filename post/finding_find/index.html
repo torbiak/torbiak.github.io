@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en-US" prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#">
+<head>
+    <meta charset="utf-8">
+
+    
+
+    
+    <title>Finding find: grasping its simple expression language | Jordan Torbiak</title>
+    
+    <link rel="canonical" href="http://torbiak.com/post/finding_find/">
+    
+    <link href="/css/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Hugo 0.145.0">
+    <meta name="twitter:card" content="summary"/>
+    <meta name="description" content="The important point that&#39;s difficult to glean from the manpage." />
+    <meta property="og:title" content="Finding find: grasping its simple expression language" />
+<meta property="og:description" content="The important point that&#39;s difficult to glean from the manpage." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://torbiak.com/post/finding_find/" />
+
+  <meta property="og:image" content="http://torbiak.com/img/card.png" />
+
+
+
+<meta property="article:published_time" content="2017-03-08T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2017-03-08T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+    <script type="text/javascript">
+var clicky_site_ids = clicky_site_ids || [];
+clicky_site_ids.push(101075833);
+(function() {
+  var s = document.createElement('script');
+  s.type = 'text/javascript';
+  s.async = true;
+  s.src = '//static.getclicky.com/js';
+  ( document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0] ).appendChild( s );
+})();
+</script>
+
+    <link rel="shortcut icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI
+WXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QMJFy0e6CiFpAAAAGBJREFUOMtjZGBg+M9AAWBhYGBg
+EJDXJ0vzh4cXGZhgnILuZQwF3cuwspHFYHwYYGRgYPhPNRdgs5EQoK4LsPmd5i5gQRbAZeuE0qgB
+dAE+2+kXBvhcQ710QC5gpDQ7AwAZD0ApIa9L1AAAAABJRU5ErkJggg==">
+
+</head>
+<body lang="en">
+
+<div id="container">
+
+<div class="siteHeader">
+    <a class="siteTitle" href="http://torbiak.com/">Jordan Torbiak</a>
+</div>
+
+<header>
+<h1 id="PageTitle">Finding find: grasping its simple expression language</h1>
+
+<p class="time_meta"><time>2017-03-08</time></p>
+
+</header>
+
+<h1 id="confusion">Confusion</h1>
+<p>I remember the first time I tried to use the <code>find</code> command on Linux, over a decade ago. I knew a substring of the name of a file I wanted to find, had found something on the web suggesting I use <code>find</code>, and was so disappointed when I couldn&rsquo;t just run <code>find $SUBSTR</code> to get my desired result. &ldquo;Surely such a command exists,&rdquo; I thought. And it basically does, with <code>locate</code>, but I was searching directories that hadn&rsquo;t been indexed by <code>updatedb</code> and didn&rsquo;t know enough about globbing and quoting in <code>bash</code> to effectively give patterns to it. So I did some more searching on the web, learned I needed to give a <code>-name</code> predicate to <code>find</code>, and typed a lot of commands like the following over the next few years:</p>
+<pre><code>find . -name &quot;*$SUBSTR*&quot;
+</code></pre>
+<p>[Here I&rsquo;m using &ldquo;predicate&rdquo; to mean a term of an expression. It&rsquo;s the word the GNU manpage uses.]</p>
+<p>Much later, after reading the bash manpage a few times, among other things, I wrote a shell function to make this specific task a bit shorter to type, giving me the command I had wished for years before:</p>
+<pre><code># find files under current directory containing a pattern
+function ff {
+    pattern=${1:?No pattern given}; shift
+    find . -iname &quot;*${pattern}*&quot; &quot;$@&quot; 2&gt;/dev/null
+}
+</code></pre>
+<h1 id="beyond-names">Beyond names</h1>
+<p>Eventually I needed to find files based on their modification times and I started using the <code>-mtime</code> predicate. For example, to find files modified within the past 24 hours (<code>-mtime</code> takes units of 24 hours):</p>
+<pre><code>find . -mtime -1
+</code></pre>
+<p>When using a condition like this that can match large numbers of uninteresting files it becomes obvious that further filtering is necessary. <code>egrep -v</code> can be used for this, but to avoid needlessly traversing directories and wasting time, using the <code>-prune</code> predicate for <code>find</code> is desirable. It was difficult to use properly without understanding find&rsquo;s little expression language, though.</p>
+<h1 id="essence-of-expressions">Essence of expressions</h1>
+<p>The <code>DESCRIPTION</code> in the manpage for GNU <code>find</code> makes sense now but it meant nothing to me in 2005. &ldquo;&hellip;evaluating the given expression from left to right, according to the rules of precedence, until the outcome is known, at which point <code>find</code> moves on to the next file name.&rdquo; All it means, though, is that you give <code>find</code> a boolean expression composed of predicates and operators, and each file will get tested against it. Each predicate evaluates to true or false, and they are combined with the AND (<code>-a</code>) and OR (<code>-o</code>) operators. I don&rsquo;t remember how I came to understand this, but the best explanation I&rsquo;ve seen is in chapter 9 of <a href="http://shop.oreilly.com/product/9780596003302.do">Unix Power Tools</a>.</p>
+<p>A few pages down in the manpage, in the <code>EXPRESSION</code> section, we see there are several classes of predicates: tests, actions, options, and operators. <code>-mtime</code> and <code>-name</code> are examples of tests, <code>-print</code> is the default action, <code>-maxdepth</code> is an example of an option, and <code>-a</code> (AND) is the default operator. It might seem weird to include actions and options in a boolean expression of tests, and it is, but it works well. They can be shoehorned in with the tests because they also return boolean values: most <em>actions</em> always return true, and <em>options</em> always return true. <code>-print</code>, the most commonly used action, always returns true.</p>
+<p>After grasping this key point, that <code>find</code> is just evaluating a boolean expression, it&rsquo;s easy to write elaborate commands. Starting with something simple, though:</p>
+<pre><code>$ ls
+bar  foo
+$ find . -name foo -a -print
+./foo
+
+# Using defaults to save typing:
+$ find . -name foo
+./foo
+</code></pre>
+<p>This expression and its evaluation can be represented in a C-inspired syntax:</p>
+<pre><code>Testing &quot;bar&quot;:
+name == &quot;foo&quot; &amp;&amp; print
+false &amp;&amp; print
+false
+continue to the next file
+
+Testing &quot;foo&quot;:
+name == &quot;foo&quot; &amp;&amp; print
+true &amp;&amp; print
+print
+true
+continue to the next file
+</code></pre>
+<p><code>find</code> reads the current directory, gets <code>bar</code>, tests it against <code>-name foo</code>, which evaluates to false, and short-circuits on the <code>-a</code> operator, continuing on to <code>foo</code>, which tests true with <code>-name foo</code> and so gets printed by <code>-print</code>.</p>
+<h1 id="prune">Prune</h1>
+<p>Back to <code>-prune</code>. We&rsquo;re still searching for <code>foo</code>, but let&rsquo;s say there&rsquo;s also a directory we don&rsquo;t want to descend into called <code>cache</code>. There&rsquo;s a file called <code>foo</code> in it so it&rsquo;s easier to tell if it&rsquo;s getting searched.</p>
+<pre><code># List files (-type f) under the working directory.
+$ find . -type f
+./cache/foo
+./bar
+./foo
+
+$ find . -name cache -prune -o -name foo -print
+./foo
+</code></pre>
+<p>Here&rsquo;s the expression in C-inspired syntax:</p>
+<pre><code>Testing &quot;cache&quot;:
+(name == &quot;cache&quot; &amp;&amp; prune) || (name == &quot;foo&quot; &amp;&amp; print)
+(true &amp;&amp; prune) || (name == &quot;foo&quot; &amp;&amp; print)
+prune || (name == &quot;foo&quot; &amp;&amp; print)
+true || (name == &quot;foo&quot; &amp;&amp; print)
+true
+continue to the next file
+
+Testing &quot;foo&quot;:
+(name == &quot;cache&quot; &amp;&amp; prune) || (name == &quot;foo&quot; &amp;&amp; print)
+(false &amp;&amp; prune) || (name == &quot;foo&quot; &amp;&amp; print)
+name == &quot;foo&quot; &amp;&amp; print
+true &amp;&amp; print
+print
+true
+continue to the next file
+</code></pre>
+<p>Let&rsquo;s run through this. When <code>find</code> is testing <code>cache</code>, <code>-name cache</code> returns true, so <code>-prune</code> gets run, which removes <code>cache</code> from the list of directories to descend into and returns true. The return value of the whole expression is then known because the left side of the OR (<code>-o</code>) is true, so <code>find</code> moves onto the next file. When testing <code>foo</code>, <code>-name cache</code> returns false, failing the left side of the OR, so <code>find</code> moves to the right side where <code>-name foo</code> returns true, resulting in <code>./foo</code> being printed.</p>
+<h1 id="default-action">Default action</h1>
+<p>If an expression doesn&rsquo;t print or execute anything <code>find</code> treats it as if it were surrounded in parentheses and followed by a print action: <code>( EXPR ) -print</code>. For example, if we remove <code>-print</code> from the previous command:</p>
+<pre><code>$ find . -name cache -prune -o -name foo
+./cache
+./foo
+</code></pre>
+<p><code>cache</code> gets printed because <code>-prune</code> returns true, making the overall expression true for it.</p>
+<h1 id="parens">Parens</h1>
+<p>As with many expression languages, parentheses can be used to force precedence. They need to be escaped or quoted so the shell doesn&rsquo;t treat them specially:</p>
+<pre><code>$ find . -name cache -prune -o \( -name foo -o -name bar \) -print
+./bar
+./foo
+</code></pre>
+<h1 id="troubleshooting">Troubleshooting</h1>
+<p>If an expression isn&rsquo;t behaving as expected <code>-exec</code> or <code>-printf</code> can be used to visualize what&rsquo;s actually happening. If portability is important, note that <code>-printf</code> is a GNU extension and isn&rsquo;t specified in <a href="http://pubs.opengroup.org/onlinepubs/9699919799/utilities/find.html">POSIX</a>.</p>
+<pre><code>$ find . -name cache -printf &quot;pruning %p\n&quot; -prune -o -name foo -print
+pruning ./cache
+./foo
+
+$ find . -name cache -exec echo pruning {} \; -prune -o -name foo -print
+pruning ./cache
+./foo
+</code></pre>
+<h1 id="theres-more">There&rsquo;s more</h1>
+<p>Once I understood the basic concept of the expression language the manpage became a good reference. Check it out to discover other useful tests and actions. Some of my favourite POSIX-specified predicates are <code>-perm</code>, <code>-user</code>, and <code>-size</code>, and I frequently use the GNU extensions <code>-maxdepth</code>, <code>-mmin</code>, <code>-regex</code>, and <code>-ls</code>. Happy finding.</p>
+
+<hr>
+<nav>
+
+  <p>Previous: <a href="/post/failing_mouse_keys/">Failing to write useful mouse keys for X11</a></p>
+
+
+  <p>Next: <a href="/post/autofixup/">Absorb changes across a topic branch in git</a></p>
+
+</nav>
+<footer class="partwidth">
+  <nav>
+    <div>
+      <a href="/">Home</a></span>
+      
+    </div>
+    <span>&copy;2017</span>
+  </nav>
+</footer>
+
+</div> 
+</body>
+</html>
+

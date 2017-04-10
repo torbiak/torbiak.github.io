@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en-US" prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#">
+<head>
+    <meta charset="utf-8">
+
+    
+
+    
+    <title>Absorb changes across a topic branch in git | Jordan Torbiak</title>
+    
+    <link rel="canonical" href="http://torbiak.com/post/autofixup/">
+    
+    <link href="/css/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Hugo 0.145.0">
+    <meta name="twitter:card" content="summary"/>
+    <meta name="description" content="Use git-autofixup to automatically create fixup! commits for a topic branch." />
+    <meta property="og:title" content="Absorb changes across a topic branch in git" />
+<meta property="og:description" content="Use git-autofixup to automatically create fixup! commits for a topic branch." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://torbiak.com/post/autofixup/" />
+
+  <meta property="og:image" content="http://torbiak.com/img/card.png" />
+
+
+
+<meta property="article:published_time" content="2017-06-04T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2017-06-04T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+    <script type="text/javascript">
+var clicky_site_ids = clicky_site_ids || [];
+clicky_site_ids.push(101075833);
+(function() {
+  var s = document.createElement('script');
+  s.type = 'text/javascript';
+  s.async = true;
+  s.src = '//static.getclicky.com/js';
+  ( document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0] ).appendChild( s );
+})();
+</script>
+
+    <link rel="shortcut icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI
+WXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QMJFy0e6CiFpAAAAGBJREFUOMtjZGBg+M9AAWBhYGBg
+EJDXJ0vzh4cXGZhgnILuZQwF3cuwspHFYHwYYGRgYPhPNRdgs5EQoK4LsPmd5i5gQRbAZeuE0qgB
+dAE+2+kXBvhcQ710QC5gpDQ7AwAZD0ApIa9L1AAAAABJRU5ErkJggg==">
+
+</head>
+<body lang="en">
+
+<div id="container">
+
+<div class="siteHeader">
+    <a class="siteTitle" href="http://torbiak.com/">Jordan Torbiak</a>
+</div>
+
+<header>
+<h1 id="PageTitle">Absorb changes across a topic branch in git</h1>
+
+<p class="time_meta"><time>2017-06-04</time></p>
+
+</header>
+
+<h1 id="motivation-tedious-fixups">Motivation: tedious fixups</h1>
+<p>Here&rsquo;s the situation. I&rsquo;m working on a feature and end up with a chain of commits that depend on each other. It&rsquo;d be easier for me as the author to put all the work in a single commit, but I like telling stories with my commits to (hopefully) make reviewing the branch easier and the history more meaningful in general. Anyway, the review goes back and forth for a while, motivating a bunch of small edits that are logically most connected to various commits. I commit these edits separately and then squash/fixup them all with an interactive rebase. Now, assigning changes to commits representing logical groups of changes was fun/challenging the first time, but assigning these small edits born of review feedback is nearly a mechanical process of scanning through the list of topic branch commits and copy-pasting SHAs. [Or, more conveniently, using <code>git commit --fixup=:/&lt;regex&gt;</code>, although I haven&rsquo;t thought to do that until recently.]</p>
+<p>Personal and team git workflows apparently vary wildly, so not everyone has dealt with this situation, but I&rsquo;ve encountered it with enough regularity that when I read the description of Facebook&rsquo;s <a href="https://bitbucket.org/facebook/hg-experimental/src/abee33554ccf744c852b14876d1d2069e3fe22d2/hgext3rd/absorb/__init__.py?at=default&amp;fileviewer=file-view-default"><code>hg absorb</code></a> command in these <a href="https://groups.google.com/forum/#!topic/mozilla.dev.version-control/nh4fITFlEMk">Mercurial sprint notes</a> I was super envious. To cure my envy I wrote <a href="https://github.com/torbiak/git-autofixup"><code>git-autofixup</code></a>.</p>
+<h1 id="how-it-works">How it works</h1>
+<p><code>git-autofixup</code> parses hunks of changes in the working directory out of <code>git diff</code> output and uses <code>git blame</code> to assign those hunks to commits in <code>&lt;revision&gt;..HEAD</code>, which will typically represent a topic branch, and then creates fixup commits to be used with <code>git rebase --interactive --autosquash</code>.</p>
+<p>By default a hunk will be included in a fixup commit if the hunk&rsquo;s context shows there&rsquo;s an unambiguous target topic branch commit. There are two situations where a target commit is considered unambiguous:</p>
+<ol>
+<li>
+<p>When it&rsquo;s the only topic branch commit the hunk is near. More precisely, when it&rsquo;s the only topic branch commit appearing in the blame output of all the hunk&rsquo;s context lines.</p>
+</li>
+<li>
+<p>It&rsquo;s blamed for all the lines that the hunk changed, even if changes from other topic branch commits are nearby. More precisely, it&rsquo;s blamed for all the removed lines and at least one of the context lines adjacent to added lines, and no context lines adjacent to added lines are blamed on any other topic branch commits.</p>
+</li>
+</ol>
+<p>Slightly stricter assignment criteria are also available for when you&rsquo;re untangling fixups from changes for a new commit: see the description of the <code>--strict</code> option in the <code>--help</code>.</p>
+<h1 id="example">Example</h1>
+<p><code>git-autofixup</code> is most useful on big projects, in big teams, on long-lived topic branches, but I&rsquo;ve tried to concoct a small example that motivates its use. Say we have a little python library that for whatever reason transforms a given name so the letters of the last word of the name alternate between upper and lower case:</p>
+<pre><code>def last_name_alternating_case(name):
+    &quot;&quot;&quot;Return name, but with the last word in aLtErNaTiNg case.&quot;&quot;&quot;
+    words = name.split()
+    letters = list(words[-1])
+    for (i, char) in enumerate(letters):
+        if i % 2 == 0:
+            letters[i] = char.lower()
+        else:
+            letters[i] = char.upper()
+    words[-1] = ''.join(letters)
+    return ' '.join(words)
+</code></pre>
+<p>A new function is required that alternates the case of the letters in every other word of a given string, so we start a topic branch and have it track <code>master</code>. Before we start writing <code>odd_words_alternating_case</code>, though, we realize some of the logic needed can be factored out of <code>last_name_alternating_case</code>. So we do that and make a commit with the summary <code>Factor out alternating_case function</code>. The file is now:</p>
+<pre><code>def last_name_alternating_case(name):
+    &quot;&quot;&quot;Return name, but with the last word in aLtErNaTiNg case.&quot;&quot;&quot;
+    words = name.split()
+    words[-1] = alternating_case(words[-1])
+    return ' '.join(words)
+
+def alternating_case(s):
+    letters = list(s)
+    for (i, char) in enumerate(letters):
+        if i % 2 == 0:
+            letters[i] = char.upper()
+        else:
+            letters[i] = char.lower()
+    return ''.join(letters)
+</code></pre>
+<p>Now we&rsquo;re ready to write <code>odd_words_alternating_case</code> using <code>alternating_case</code>, and commit it as <code>Add odd_words_alternating_case</code>:</p>
+<pre><code>def odd_words_alternating_case(s):
+    &quot;&quot;&quot;Returns the string with alternating words in alternating case.&quot;&quot;&quot;
+    words = s.split()
+    for (i, word) in enumerate(words):
+        if i % 2 == 0:
+            continue
+        words[i] = alternating_case(word)
+    return ' '.join(words)
+</code></pre>
+<p>Looking the code over, we realize we want to give <code>alternating_case</code> a docstring, change the tense/mood of the <code>odd_words_alternating_case</code> docstring so it&rsquo;s consistent with <code>last_name_alternating_case</code>, and we decide the first character of alternating-case words should be uppercase. Here&rsquo;s the diff of these unstaged changes:</p>
+<pre><code>diff --git a/ex.py b/ex.py
+index 2ed7e63..2a5e73b 100644
+--- a/ex.py
++++ b/ex.py
+@@ -7,2 +7,3 @@ def last_name_alternating_case(name):
+ def alternating_case(s):
++    &quot;&quot;&quot;Return s with its characters in aLtErNaTiNg case.&quot;&quot;&quot;
+     letters = list(s)
+@@ -10,5 +11,5 @@ def alternating_case(s):
+         if i % 2 == 0:
+-            letters[i] = char.upper()
+-        else:
+             letters[i] = char.lower()
++        else:
++            letters[i] = char.upper()
+     return ''.join(letters)
+@@ -16,3 +17,3 @@ def alternating_case(s):
+ def odd_words_alternating_case(s):
+-    &quot;&quot;&quot;Returns the string with alternating words in alternating case.&quot;&quot;&quot;
++    &quot;&quot;&quot;Return s with odd words in alternating case.&quot;&quot;&quot;
+     words = s.split()
+</code></pre>
+<p>We&rsquo;d like to squash these changes into the previous two commits. In this particular instance it&rsquo;d be quite easy to do with two rounds of <code>git add --patch</code> followed by <code>git commit --fixup=:/&lt;regex&gt;</code>. but if the topic branch had more commits and we were fixing up more areas this process would get tedious. Let&rsquo;s see what <code>git-autofixup</code> does with it:</p>
+<pre><code>$ git-autofixup -vv @{upstream}
+ex.py @@ -5,16 +5,17 @@ has multiple targets
+656a790f|   5|    return ' '.join(words)    |     return ' '.join(words)
+656a790f|   6|                              |
+656a790f|   7|def alternating_case(s):      | def alternating_case(s):
+        |    |                              |+    &quot;&quot;&quot;Return s with its char
+656a790f|   8|    letters = list(s)         |     letters = list(s)
+^       |   9|    for (i, char) in enumerate|     for (i, char) in enumerat
+^       |  10|        if i % 2 == 0:        |         if i % 2 == 0:
+^       |  11|            letters[i] = char.|-            letters[i] = char
+656a790f|  12|        else:                 |-        else:
+656a790f|  13|            letters[i] = char.|             letters[i] = char
+        |    |                              |+        else:
+        |    |                              |+            letters[i] = char
+656a790f|  14|    return ''.join(letters)   |     return ''.join(letters)
+5be3a3b9|  15|                              |
+5be3a3b9|  16|def odd_words_alternating_case| def odd_words_alternating_cas
+5be3a3b9|  17|    &quot;&quot;&quot;Returns the string with|-    &quot;&quot;&quot;Returns the string wit
+        |    |                              |+    &quot;&quot;&quot;Return s with odd word
+5be3a3b9|  18|    words = s.split()         |     words = s.split()
+5be3a3b9|  19|    for (i, word) in enumerate|     for (i, word) in enumerat
+5be3a3b9|  20|        if i % 2 == 0:        |         if i % 2 == 0:
+</code></pre>
+<p>We&rsquo;re using high verbosity (<code>-vv</code>) so that the &ldquo;blamediff&rdquo; gets printed and we can see how the hunks are being handled. Our changes are close enough together that they all get put into the same hunk with the default number of diff context lines (3), and then that single hunk is related to both of our topic branch commits. When we reduce the number of context lines to get more hunks the unstaged changes are isolated enough to be assigned to their respective commits and two <code>fixup!</code> commits are created:</p>
+<pre><code>$ git-autofixup --context=1 -vv @{upstream}
+ex.py @@ -7,2 +7,3 @@ fixes 656a790f Factor out alternating_case function
+656a790f|   7|def alternating_case(s):      | def alternating_case(s):
+        |    |                              |+    &quot;&quot;&quot;Return s with its char
+656a790f|   8|    letters = list(s)         |     letters = list(s)
+
+ex.py @@ -10,5 +11,5 @@ fixes 656a790f Factor out alternating_case function
+^       |  10|        if i % 2 == 0:        |         if i % 2 == 0:
+^       |  11|            letters[i] = char.|-            letters[i] = char
+656a790f|  12|        else:                 |-        else:
+656a790f|  13|            letters[i] = char.|             letters[i] = char
+        |    |                              |+        else:
+        |    |                              |+            letters[i] = char
+656a790f|  14|    return ''.join(letters)   |     return ''.join(letters)
+
+ex.py @@ -16,3 +17,3 @@ fixes 5be3a3b9 Add odd_word_alternating_case function
+5be3a3b9|  16|def odd_words_alternating_case| def odd_words_alternating_cas
+5be3a3b9|  17|    &quot;&quot;&quot;Returns the string with|-    &quot;&quot;&quot;Returns the string wit
+        |    |                              |+    &quot;&quot;&quot;Return s with odd word
+5be3a3b9|  18|    words = s.split()         |     words = s.split()
+
+[topic 44cadf7] fixup! Add odd_word_alternating_case function
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+[topic bde4ca5] fixup! Factor out alternating_case function
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+</code></pre>
+<p>Finally, we do a <code>git rebase --interactive --autosquash</code> and see git has set the fixup commits to be squashed into their targets:</p>
+<pre><code>pick 656a790 Factor out alternating_case function
+fixup cfa466e fixup! Factor out alternating_case function
+pick 5be3a3b Add odd_word_alternating_case function
+fixup 1a6c084 fixup! Add odd_word_alternating_case function
+</code></pre>
+<h1 id="where-to-get-it">Where to get it</h1>
+<p>Check it out on <a href="https://github.com/torbiak/git-autofixup">GitHub</a> or the <a href="https://metacpan.org/pod/distribution/App-Git-Autofixup/git-autofixup">CPAN</a>. It can be installed using a CPAN client or by simply downloading the self-contained script, <a href="https://raw.githubusercontent.com/torbiak/git-autofixup/master/git-autofixup"><code>git-autofixup</code></a>, to a directory in <code>PATH</code>.</p>
+
+<hr>
+<nav>
+
+  <p>Previous: <a href="/post/finding_find/">Finding find: grasping its simple expression language</a></p>
+
+
+  <p>Next: <a href="/post/histogram_gnuplot_vs_matplotlib/">Histograms of timestamped data: gnuplot vs matplotlib</a></p>
+
+</nav>
+<footer class="partwidth">
+  <nav>
+    <div>
+      <a href="/">Home</a></span>
+      
+    </div>
+    <span>&copy;2017</span>
+  </nav>
+</footer>
+
+</div> 
+</body>
+</html>
+

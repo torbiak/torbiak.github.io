@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en-US" prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#">
+<head>
+    <meta charset="utf-8">
+
+    
+
+    
+    <title>Normalize volume system-wide with PulseAudio | Jordan Torbiak</title>
+    
+    <link rel="canonical" href="http://torbiak.com/post/normalize_volume/">
+    
+    <link href="/css/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Hugo 0.145.0">
+    <meta name="twitter:card" content="summary"/>
+    <meta name="description" content="How to use a LADSPA compressor filter to normalize volume system-wide, and to use udev rules, a systemd user service, and PulseAudio commands to make the necessary config changes when connecting/disconnecting Bluetooth headphones." />
+    <meta property="og:title" content="Normalize volume system-wide with PulseAudio" />
+<meta property="og:description" content="How to use a LADSPA compressor filter to normalize volume system-wide, and to use udev rules, a systemd user service, and PulseAudio commands to make the necessary config changes when connecting/disconnecting Bluetooth headphones." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://torbiak.com/post/normalize_volume/" />
+
+  <meta property="og:image" content="http://torbiak.com/img/card.png" />
+
+
+
+<meta property="article:published_time" content="2023-12-20T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2023-12-20T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+    <script type="text/javascript">
+var clicky_site_ids = clicky_site_ids || [];
+clicky_site_ids.push(101075833);
+(function() {
+  var s = document.createElement('script');
+  s.type = 'text/javascript';
+  s.async = true;
+  s.src = '//static.getclicky.com/js';
+  ( document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0] ).appendChild( s );
+})();
+</script>
+
+    <link rel="shortcut icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI
+WXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QMJFy0e6CiFpAAAAGBJREFUOMtjZGBg+M9AAWBhYGBg
+EJDXJ0vzh4cXGZhgnILuZQwF3cuwspHFYHwYYGRgYPhPNRdgs5EQoK4LsPmd5i5gQRbAZeuE0qgB
+dAE+2+kXBvhcQ710QC5gpDQ7AwAZD0ApIa9L1AAAAABJRU5ErkJggg==">
+
+</head>
+<body lang="en">
+
+<div id="container">
+
+<div class="siteHeader">
+    <a class="siteTitle" href="http://torbiak.com/">Jordan Torbiak</a>
+</div>
+
+<header>
+<h1 id="PageTitle">Normalize volume system-wide with PulseAudio</h1>
+
+<p class="time_meta">
+Published: <time>2023-12-20</time>
+<br>Updated: <time>2024-03-23</time>
+</p>
+
+</header>
+
+  <aside><nav id="TableOfContents">
+  <ul>
+    <li><a href="#motivation">Motivation</a></li>
+    <li><a href="#pulseaudio-configuration">PulseAudio configuration</a></li>
+    <li><a href="#manually-route-a-ladspa-sink-to-bluetooth-headphones">Manually route a LADSPA sink to Bluetooth headphones</a></li>
+    <li><a href="#automatically-route-a-ladspa-sink-to-bluetooth-headphones">Automatically route a LADSPA sink to Bluetooth headphones</a>
+      <ul>
+        <li><a href="#find-udev-info">Find udev info</a></li>
+        <li><a href="#systemd-user-service">systemd user service</a></li>
+        <li><a href="#pulseaudio-configuration-script">PulseAudio configuration script</a></li>
+        <li><a href="#udev-rule">udev rule</a></li>
+      </ul>
+    </li>
+    <li><a href="#good-luck">Good luck</a></li>
+    <li><a href="#addendum-change-log">Addendum: change log</a></li>
+  </ul>
+</nav></aside>
+
+<h1 id="motivation">Motivation</h1>
+<p>I usually watch YouTube videos while I wash dishes, and if videos have very different volume levels it can be either annoying to not understand what&rsquo;s being said or painful to endure loud sounds while I dry my hands so that I can adjust the volume. So I&rsquo;ve been delighted over the past couple years using a compressor filter from <a href="http://plugin.org.uk/">Steve Harris&rsquo; LADSPA plugin suite</a> with PulseAudio to normalize volume for all audio output from my laptop. I&rsquo;m quite willing to trade dynamic range for listening comfort, and for me even music doesn&rsquo;t sound noticeably worse with the compressor filter.</p>
+<p>In case you&rsquo;re wondering, <a href="http://ladspa.org/">LADSPA</a> is the Linux Audio Developer&rsquo;s Simple Plugin API, and basically it&rsquo;s an interface for shared libraries that allows plugins to define some control ports/params and give callbacks to process samples. It&rsquo;s like a simpler version of <a href="https://en.wikipedia.org/wiki/Virtual_Studio_Technology">VST</a>, if you&rsquo;ve ever used synth or effects plugins in a DAW and have heard of that.</p>
+<h1 id="pulseaudio-configuration">PulseAudio configuration</h1>
+<p>For configuring PulseAudio I referred to <a href="https://askubuntu.com/a/44012">this answer on the Ask Ubuntu StackExchange</a>. On Arch I installed the <code>swh-plugins</code> package. I then added a PulseAudio config drop-in under <code>/etc/pulse/defaultpa.d</code>, although you could instead add it to a per-user config in <code>$XDG_CONFIG_HOME/pulse/client.conf</code>, <a href="https://wiki.archlinux.org/title/PulseAudio/Examples#Creating_user_configuration_files">as described on the Arch wiki</a>. For PulseAudio CLI syntax and commands, see the <code>pulse-cli-syntax(5)</code> manpage.</p>
+<p>Sorry about the long lines in this and several other snippets, but neither PulseAudio CLI syntax or udev rules support line continuations and the likely confusion over including &ldquo;fake&rdquo; ones doesn&rsquo;t seem worth it.</p>
+<p><code>/etc/pulse/defaultpa.d/compressor.pa</code>:</p>
+<pre><code>.ifexists module-ladspa-sink.so
+.nofail
+load-module module-ladspa-sink sink_name=compressor plugin=sc4_1882 label=sc4 control=1,1.5,400,-30,20,5,24
+set-default-sink compressor
+.fail
+.endif
+</code></pre>
+<p><code>module-ladspa-sink</code> takes a <code>sink_master</code> param (previously named <code>master</code>) to define where the processed audio goes, but I&rsquo;m leaving it as the default. See <a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/#module-ladspa-sink">the PulseAudio builtin module docs</a>. If you wanted to route the output to a different sink, you can find its name with <code>pactl list short sinks</code>.</p>
+<p>I&rsquo;m still using the SC4 filter settings from that Ask Ubuntu answer, except that I&rsquo;ve increased the makeup gain so there&rsquo;s a smaller volume difference between having the filter on/off, to avoid having sound blaring if I ever accidentally turn off the filter. Mostly the knobs are cranked to always be compressing as soon and hard as possible, except knee radius, which is set in the middle of the allowed values, but when adjusting it I can&rsquo;t notice a difference. With these settings it feels like the volume is always being reduced, which seems good to me.</p>
+<ul>
+<li>RMS/peak ratio: 1</li>
+<li>Attack time (ms): 1.5</li>
+<li>Release time (ms): 400</li>
+<li>Threshold level (dB): -30</li>
+<li>Gain reduction ratio (1:n): 20</li>
+<li>Knee radius: 5</li>
+<li>Makeup gain (dB): 24</li>
+</ul>
+<p>If you want to get a better sense of how the filter params work and see their allowed ranges, here&rsquo;s <a href="https://github.com/swh/ladspa/blob/master/sc4_1882.xml">the code for the SC4 filter</a>. And if you&rsquo;re looking at the code you might also want to peek at <a href="http://ladspa.org/ladspa_sdk/ladspa.h.txt">the little LADSPA spec</a>.</p>
+<p>After writing the PulseAudio config, I use <code>pulseaudio -k</code> to kill the server, and then the stock <code>systemd</code> config for my system immediately restarts it for me with the new settings. I can see any errors with my PulseAudio config by following syslog with <code>journalctl -f</code>.</p>
+<p>The above config might be all you need, but I needed to do a bit more to have things work with my Bluetooth headphones.</p>
+<h1 id="manually-route-a-ladspa-sink-to-bluetooth-headphones">Manually route a LADSPA sink to Bluetooth headphones</h1>
+<p>When you connect Bluetooth headphones a new sink gets added to PulseAudio, but unless we do something our compressor is going to stay routed to our ALSA output or wherever we pointed it at PulseAudio startup, and the output to the headphones won&rsquo;t be filtered. For a few years I was keeping a <code>pavucontrol</code> window open and manually rerouting the compressor&rsquo;s output to my headphones after connecting them, but when I set up my new laptop <code>pavucontrol</code> no longer gave me a dropdown to do manual routing for LADSPA sinks, and I haven&rsquo;t figured out why yet. So, I started running a little script every time I connected my headphones, which adds another LADSPA sink with the output routed to my headphones. The sink name is based on the headphones&rsquo; MAC address, and is constant, so I just needed to look it up once using <code>pactl list short sinks</code> and provide it as the <code>sink_master</code> param.</p>
+<pre><code>pacmd &lt;&lt;EOF
+load-module module-ladspa-sink sink_name=bluetooth_compressor plugin=sc4_1882 label=sc4 sink_master=bluez_sink.00_1B_66_A1_45_12.a2dp_sink control=1,1.5,400,-30,20,5,24
+set-default-sink bluetooth_compressor
+EOF
+</code></pre>
+<p>After disconnecting the headphones the LADSPA sink gets destroyed, so back when I was doing the routing in <code>pavucontrol</code> I would either need to change the LADSPA sink&rsquo;s master back to my soundcard before disconnecting my headphones to avoid it getting destroyed, or I&rsquo;d need to recreate the sink by restarting pulseaudio. With my new laptop my problem was that after the LADSPA sink for my headphones was destroyed, PulseAudio would choose my soundcard as the default sink instead of the compressor that outputs to it. I could run another script after disconnecting my headphones, but instead I finally had the motivation to automate the routing. I couldn&rsquo;t figure out how to fix this with the <a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/">builtin PulseAudio modules</a>, and I considered writing a PulseAudio module to allow prioritizing sinks, but running shell scripts on Bluetooth connection/disconnection events seemed easier and more flexible.</p>
+<h1 id="automatically-route-a-ladspa-sink-to-bluetooth-headphones">Automatically route a LADSPA sink to Bluetooth headphones</h1>
+<h2 id="find-udev-info">Find udev info</h2>
+<p>udev is part of systemd and lets us run shell scripts or start systemd services on hardware events. <code>udev(7)</code> is a useful reference when writing rules, and <a href="https://wiki.archlinux.org/title/Udev">the Arch wiki page on it</a> has some good info, too. Before writing the rule I needed to find some way to identify my headphones. By running <code>udevadm monitor</code> before connecting my headphones, I could see the related devices the kernel makes on connection:</p>
+<pre><code>$ udevadm monitor
+...
+KERNEL[80470.275026] add      /devices/pci0000:00/0000:00:08.1/0000:c1:00.3/usb1/1-5/1-5:1.0/bluetooth/hci0/hci0:50 (bluetooth)
+UDEV  [80470.276714] add      /devices/pci0000:00/0000:00:08.1/0000:c1:00.3/usb1/1-5/1-5:1.0/bluetooth/hci0/hci0:50 (bluetooth)
+KERNEL[80472.139125] add      /devices/virtual/input/input28 (input)
+KERNEL[80472.139222] add      /devices/virtual/input/input28/event13 (input)
+UDEV  [80472.140796] add      /devices/virtual/input/input28 (input)
+UDEV  [80472.172162] add      /devices/virtual/input/input28/event13 (input)
+</code></pre>
+<p>And I could get more information about devices with <code>udevadm info -ap</code>:</p>
+<pre><code>$ udevadm info -ap /devices/virtual/input/input28
+...
+  looking at device '/devices/virtual/input/input28':
+    KERNEL==&quot;input28&quot;
+    SUBSYSTEM==&quot;input&quot;
+    DRIVER==&quot;&quot;
+    ...
+    ATTR{id/bustype}==&quot;0005&quot;
+    ATTR{id/product}==&quot;004b&quot;
+    ATTR{id/vendor}==&quot;0082&quot;
+    ATTR{id/version}==&quot;0103&quot;
+    ATTR{inhibited}==&quot;0&quot;
+    ATTR{name}==&quot;HD1 M2 AEBT (AVRCP)&quot;
+    ATTR{phys}==&quot;14:ac:60:46:87:9e&quot;
+    ...
+</code></pre>
+<p>I don&rsquo;t know how to write a udev rule that would match all Bluetooth headphones, but this is enough information to write a rule for my specific ones, at least. An important thing to note now, though, is that the pulseaudio daemon is per-user, so I need to run <code>pacmd</code> as my user. I could use the <code>RUN</code> operator in the udev rule along with <code>sudo -u &lt;user&gt;</code> and have separate rules for <code>ACTION==&quot;add&quot;</code> and <code>ACTION==&quot;remove&quot;</code>, but hard-coding my username feels kinda bad, so instead I went with using <code>ENV{SYSTEMD_USER_WANTS}</code> and writing a device-bound systemd user service that&rsquo;ll automatically be stopped when the device goes away. To make that work, I need to <code>TAG+=&quot;systemd&quot;</code> the device so systemd picks it up, and somehow give the device name that systemd uses to a parametrized service (&ldquo;instantiated&rdquo; in systemd parlance), so it can be bound to it.</p>
+<p>With a udev rule like this in <code>/etc/udev/rules.d/99-sennheiser.rules</code>:</p>
+<pre><code>ACTION==&quot;add&quot;, ATTR{name}==&quot;HD1 M2 AEBT (AVRCP)&quot;, TAG+=&quot;systemd&quot;
+</code></pre>
+<p>And after reloading the udev rules:</p>
+<pre><code>sudo udevadm control --reload
+</code></pre>
+<p>When I connect the headphones I see a corresponding device in my <code>systemctl</code> output:</p>
+<pre><code>UNIT                                      LOAD    ACTIVE  SUB      DESCRIPTION
+sys-devices-virtual-input-input28.device  loaded  active  plugged  /sys/devices/virtual/input/input28
+</code></pre>
+<p>Which is cool, but not terribly useful yet. We&rsquo;ll come back to writing the udev rule. First I need to figure out what the systemd user service will be like, so I know what parameters it needs.</p>
+<h2 id="systemd-user-service">systemd user service</h2>
+<p>Instantiated systemd services are named such that there&rsquo;s an <code>@</code> before the unit extension and then, when being started, they can be given an argument in their name after the <code>@</code>. For example, if you run <code>systemctl</code> you&rsquo;ll probably see a <code>getty@tty1.service</code>, where <code>getty@.service</code> is the unit name and <code>tty1</code> is the argument. I put my service file at <code>$XDG_CONFIG_HOME/systemd/user/bt-compress@.service</code>. After modifying that file I need to run <code>systemctl --user daemon-reload</code> to load the changes and use <code>journalctl</code> when connecting my headphones to look for errors in syslog. There&rsquo;s not much point &ldquo;installing&rdquo; our service in the systemd sense, since we can&rsquo;t start it unless the headphones are connected, so our service file doesn&rsquo;t have an <code>[Install]</code> section, and it won&rsquo;t show up in <code>systemctl --user</code> output unless it&rsquo;s running or failed.</p>
+<p><code>$XDG_CONFIG_HOME/systemd/user/bt-compress@.service</code>:</p>
+<pre><code>[Unit]
+BindTo=%i.device
+After=%i.device
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=%h/bin/bt-compress start
+ExecStop=%h/bin/bt-compress stop
+</code></pre>
+<p>By default a systemd service is <code>Type=simple</code> and the <code>ExecStart</code> option will run a long-running process, but we just need to run some short shell scripts at the beginning and end of the device&rsquo;s life. Looking through <code>systemd.service(5)</code>, we see that for <code>Type=oneshot</code> the service is considered up after the <code>ExecStart</code> program exits for the purpose of starting dependencies, but it will soon transition to the &ldquo;dead&rdquo; state unless we also give <code>RemainAfterExit=yes</code>. We need it to &ldquo;remain after exit&rdquo; so that systemd has an active service to stop when the device goes away.</p>
+<p>The escapes available in systemd units can be found in <code>systemd.unit(5)</code>. <code>%h</code> expands to the user&rsquo;s home directory and <code>%i</code> expands to the string between <code>@</code> and <code>.service</code> in the service name. So, we&rsquo;d like to pass the extension-less systemd device unit name in there, which we saw in the last section was <code>sys-devices-virtual-input-input28</code>. But if I reconnect my headphones I see that the number at the end of the name increments each time I connect, so it seems like we&rsquo;ll need to get the device path and convert it to the systemd device unit name in the udev rule somehow.</p>
+<h2 id="pulseaudio-configuration-script">PulseAudio configuration script</h2>
+<p>But before we get to the udev rule, here&rsquo;s the script that our systemd service calls. It&rsquo;s pretty straightforward:</p>
+<p><code>~/bin/bt-compress</code>:</p>
+<pre><code>#!/bin/bash
+set -euo pipefail
+
+log() {
+    local lvl=${1:?No level given}; shift
+    local msg=${1:?No message given}; shift
+    logger -p &quot;$lvl&quot; -t bt-compress &quot;$msg&quot;
+}
+
+usage=&quot;bt-compress start|stop&quot;
+if [[ $# -ne 1 ]]; then
+    echo &quot;$usage&quot; &gt;&amp;2
+    exit 1
+fi
+cmd=${1}; shift
+case &quot;$cmd&quot; in
+start)
+    log info 'set bluetooth_compressor as default sink'
+    pacmd &lt;&lt;EOF
+load-module module-ladspa-sink sink_name=bluetooth_compressor plugin=sc4_1882 label=sc4 sink_master=bluez_sink.00_1B_66_A1_45_12.a2dp_sink control=1,1.5,400,-30,20,5,12
+set-default-sink bluetooth_compressor
+EOF
+;;
+stop)
+    log info 'set compressor as default sink'
+    pacmd 'set-default-sink compressor'
+;;
+*)
+    echo &quot;unexpected cmd: $cmd&quot; &gt;&amp;2
+    exit 1
+;;
+esac
+</code></pre>
+<h2 id="udev-rule">udev rule</h2>
+<p>Finally, let&rsquo;s wire up udev and systemd. According to <code>systemd.device(5)</code>, the <code>SYSTEMD_USER_WANTS</code> udev device property adds a <code>Wants=</code> dependency from a device to a service, and is read by user service manager instances. And according to <code>udev(7)</code>, we can set device properties using <code>ENV{&lt;key&gt;}=&lt;value&gt;</code>. And if we use <code>udevadm test</code> to inspect the device properties, we can see that the <code>DEVPATH</code> property is included:</p>
+<pre><code>$ sudo udevadm test --action=&quot;add&quot; /devices/virtual/input/input28
+...
+DEVPATH=/devices/virtual/input/input28
+PRODUCT=5/82/4b/103
+NAME=&quot;HD1 M2 AEBT (AVRCP)&quot;
+PHYS=&quot;14:ac:60:46:87:9e&quot;
+PROP=0
+EV=100007
+KEY=...
+REL=0
+MODALIAS=...
+ACTION=add
+SUBSYSTEM=input
+TAGS=:seat:systemd:
+ID_INPUT=1
+ID_INPUT_KEY=1
+ID_BUS=bluetooth
+CURRENT_TAGS=:seat:systemd:
+SYSTEMD_USER_WANTS=bt-compress@.service
+USEC_INITIALIZED=259580475046
+</code></pre>
+<p>Apparently we&rsquo;re doing what systemd considers the usual thing, since if we just set <code>SYSTEMD_USER_WANTS</code> to our base service name, <code>bt-compress@.service</code>, it&rsquo;ll automatically pick up the <code>DEVPATH</code> from the udev event, prefix it with the sysfs mount point, escape it, and give the escaped device path as the argument to our service. So our udev rule can just be this:</p>
+<pre><code>ACTION==&quot;add&quot;, ATTR{name}==&quot;HD1 M2 AEBT (AVRCP)&quot;, TAG+=&quot;systemd&quot;, ENV{SYSTEMD_USER_WANTS}=&quot;bt-compress@.service&quot;
+</code></pre>
+<p>If you have trouble getting this to work, using <code>udevadm test</code> as above can be useful, as it prints a bunch of diagnostics, which I have elided here.</p>
+<p>But if we needed to do the escaping ourselves, we could use <code>systemd-escape</code>:</p>
+<pre><code>$ systemd-escape --template bt-compress@.service --path /sys/devices/virtual/input/input28
+bt-compress@sys-devices-virtual-input-input28.service
+</code></pre>
+<p>And surprisingly to me, there&rsquo;s a udev key for running shell commands and capturing their output: the <code>PROGRAM</code> key. The results of <code>PROGRAM</code> are then available via the <code>%c</code> or <code>$result</code> escape, and while the manpage doesn&rsquo;t currently include the <code>ENV</code> key in the list of keys where escapes are available, it apparently works. Note that <code>$devpath</code> doesn&rsquo;t include the sysfs mount point, so we need to add it when running <code>systemd-escape</code>.</p>
+<pre><code>ACTION==&quot;add&quot;, ATTR{name}==&quot;HD1 M2 AEBT (AVRCP)&quot;, TAG+=&quot;systemd&quot;, PROGRAM=&quot;/usr/bin/systemd-escape -p --template=bt-compress@.service /sys$devpath&quot;, ENV{SYSTEMD_USER_WANTS}+=&quot;$result&quot;
+</code></pre>
+<h1 id="good-luck">Good luck</h1>
+<p>I doubt you got this far unless you&rsquo;re motivated enough to set something similar up on your own machine. Good luck, and I hope this helped.</p>
+<h1 id="addendum-change-log">Addendum: change log</h1>
+<ul>
+<li>2024-03-23: Change release time from 401ms to 400ms. I must have hit Ctrl-A in Vim and incremented it by one.</li>
+</ul>
+
+<hr>
+<nav>
+
+  <p>Previous: <a href="/post/revisiting_pruned_approaches/">Revisiting pruned approaches</a></p>
+
+
+  <p>Next: <a href="/post/same_colors_in_terminal_and_vim/">Using the same colors for the terminal and Vim</a></p>
+
+</nav>
+<footer class="partwidth">
+  <nav>
+    <div>
+      <a href="/">Home</a></span>
+      
+    </div>
+    <span>&copy;2017</span>
+  </nav>
+</footer>
+
+</div> 
+</body>
+</html>
+

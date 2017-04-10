@@ -1,0 +1,1376 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Jordan Torbiak</title>
+    <link>http://torbiak.com/</link>
+    <description>Recent content on Jordan Torbiak</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Mon, 07 Apr 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://torbiak.com/" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>bash extglob: Tips for using negation/!()</title>
+      <link>http://torbiak.com/post/extglob_negation/</link>
+      <pubDate>Mon, 07 Apr 2025 00:00:00 +0000</pubDate>
+      
+      <guid>http://torbiak.com/post/extglob_negation/</guid>
+      <description>&lt;h1 id=&#34;intro&#34;&gt;Intro&lt;/h1&gt;
+&lt;p&gt;bash&amp;rsquo;s extglob feature enables some additional pattern-matching syntax and brings globbing capabilities a lot closer to typical popular regular expression dialects. In my experience, though, the only extglob operators I&amp;rsquo;ve ever had occasion to use are &lt;code&gt;@(&amp;lt;pat&amp;gt;|...)&lt;/code&gt;, which matches one of the given subpatterns, and &lt;code&gt;!(&amp;lt;pat&amp;gt;|...)&lt;/code&gt;, which matches anything except one of the given subpatterns. &lt;code&gt;@()&lt;/code&gt; is intuitive enough, but in my early experiences with &lt;code&gt;!()&lt;/code&gt; it didn&amp;rsquo;t always behave as I expected, I didn&amp;rsquo;t find any more about it in the docs, and so I mostly gave up on it except for simple cases where it&amp;rsquo;s the only thing in the pattern. And, based on the answers to &lt;a href=&#34;https://superuser.com/questions/210168/how-to-move-files-except-files-with-a-given-suffix-in-bash/1889865#1889865&#34;&gt;this superuser question&lt;/a&gt;, it seems I&amp;rsquo;m not alone.&lt;/p&gt;
+&lt;h1 id=&#34;-is-both-non-greedy-and-can-accept-the-empty-string&#34;&gt;!() is both non-greedy and can accept the empty string&lt;/h1&gt;
+&lt;p&gt;The key things to realize about &lt;code&gt;!()&lt;/code&gt; is that it can &lt;strong&gt;accept the empty string&lt;/strong&gt; and that unlike the other operators it&amp;rsquo;s &lt;strong&gt;non-greedy&lt;/strong&gt;. The combination of these attributes means that unless it&amp;rsquo;s at the end of the pattern you need to be careful to force it to eat some of the haystack, by having the following atom not match the empty string.&lt;/p&gt;
+&lt;p&gt;For example:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;!(jtor*)  # ok: reject files starting with &amp;quot;jtor&amp;quot;
+!(jtor*)*  # wrong: accepts anything
+!(jtor*)!(*.pdf)  # wrong: equivalent to !(*.pdf)
+!(jtor*).!(*.pdf)  # ok: reject files starting with &amp;quot;jtor&amp;quot; or ending with &amp;quot;.pdf&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Following a &lt;code&gt;!()&lt;/code&gt; with &lt;code&gt;*&lt;/code&gt; or another &lt;code&gt;!()&lt;/code&gt; will always make it accept the empty string. When globbing files, bash tries to match &lt;code&gt;!()&lt;/code&gt; against as little of the filename as possible, giving it one more character at a time. For each character it:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;checks if the filename can be rejected at this position by testing each subpattern in &lt;code&gt;!()&lt;/code&gt; against the rest of the haystack&lt;/li&gt;
+&lt;li&gt;if it can&amp;rsquo;t be rejected at this position of the haystack, then it checks if the filename can be accepted at this position by checking if the rest of the pattern after &lt;code&gt;!()&lt;/code&gt; matches the rest of the haystack&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So, if you want &lt;code&gt;!()&lt;/code&gt; to eat more, you have to make the following atom fail at earlier positions in the haystack, and thus &lt;code&gt;!(jtor*)*.pdf&lt;/code&gt; accepts anything and effectively ignores the &lt;code&gt;!()&lt;/code&gt;, while with &lt;code&gt;!(jtor*).pdf&lt;/code&gt; the period is going to fail to match in a filename like &lt;code&gt;jtorbiak_resume.pdf&lt;/code&gt; until the &lt;code&gt;!()&lt;/code&gt; subexpression eats &lt;code&gt;jtorbiak_resume&lt;/code&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;use-cases&#34;&gt;Use cases&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;non-test TypeScript files: &lt;code&gt;!(*.test).ts&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;without a given prefix or suffix: &lt;code&gt;!(jtor*).!(*.pdf)&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;without either substring: &lt;code&gt;!(*italic*|*thin*)&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;directories that don&amp;rsquo;t start with given prefix: &lt;code&gt;!(dir*)/&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;Sadly, it doesn&amp;rsquo;t seem like you can use a trailing &lt;code&gt;/&lt;/code&gt; to match only dirs inside of &lt;code&gt;!()&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;with none of these extensions: &lt;code&gt;!(*.svg|*.gp|*.png)&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;with no extension: &lt;code&gt;!(*.*)&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;with no extension and without some prefix: &lt;code&gt;!(*.*|jtor*)&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A particularly neat but less-readable use of &lt;code&gt;!()&lt;/code&gt; is to filter out a subset of a glob by nesting another &lt;code&gt;!()&lt;/code&gt;. For example, to find files with an extension but that also don&amp;rsquo;t have some prefix, we can do &lt;code&gt;!(!(*.*)|jtor*)&lt;/code&gt;. The double-negative is awkward, but I find it&amp;rsquo;s not so bad if I read it like: exclude files without an extension or that start with &amp;ldquo;jtor&amp;rdquo;.&lt;/p&gt;
+&lt;h1 id=&#34;performance-and-other-options&#34;&gt;Performance and other options&lt;/h1&gt;
+&lt;p&gt;While extglob is convenient for interactive use, I would generally avoid using it in scripts since it&amp;rsquo;s not enabled by default and it&amp;rsquo;s more likely to be confusing for others. Also, it&amp;rsquo;s not well-suited for dealing with lots of files since it produces filenames on the command-line, and the max length of a command line isn&amp;rsquo;t huge&amp;mdash;it&amp;rsquo;s only a couple megabytes on my system. And, its performance is poor compared to other options. Some regex engines are optimized such that they have linear time complexity as the haystack scales, by trading off memory to construct a DFA or by doing a Thompson simulation on an NFA (see &lt;a href=&#34;https://swtch.com/~rsc/regexp/regexp1.html&#34;&gt;Regular Expression Matching Can Be Simple And Fast&lt;/a&gt;), but extglob in bash is implemented in a simple recursive way and &lt;code&gt;!()&lt;/code&gt; is always going to multiply the amount of backtracking that the rest of the pattern needs to do by the number of characters that it needs to eat. Using &lt;code&gt;find&lt;/code&gt;/&lt;code&gt;fd&lt;/code&gt; or filtering an overly-accepting glob with a for-loop are often better options.&lt;/p&gt;
+&lt;p&gt;I was curious about what scale the performance of globbing could become an issue at. For finding files without extensions in my home directory, looking at ~100k files and matching 33k of them, using &lt;code&gt;find&lt;/code&gt; is noticeably faster. I&amp;rsquo;m explicitly pruning dot-dirs from the find command since the glob is implicitly doing so.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;~$ time find . -name &amp;quot;.?*&amp;quot; -prune -o -not -name &amp;quot;*.*&amp;quot; -print | wc -l
+32911
+
+real    0m0.149s
+user    0m0.053s
+sys     0m0.099s
+
+~$ time printf &#39;%s\n&#39; **/!(*.*) | wc -l
+32911
+
+real    0m0.568s
+user    0m0.133s
+sys     0m0.447s
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;appendix-bash-source-code&#34;&gt;Appendix: bash source code&lt;/h1&gt;
+&lt;p&gt;The code for extglob is in the bash repo in &lt;code&gt;lib/glob/sm_loop.c&lt;/code&gt;. There&amp;rsquo;s a lot of indirection around &lt;code&gt;sm_loop.c&lt;/code&gt;, since it gets included by &lt;code&gt;smatch.c&lt;/code&gt; twice, with different preprocessor macro definitions for single and multi-byte characters.&lt;/p&gt;
+&lt;p&gt;GMATCH and EXTMATCH are mutually recursive, with GMATCH asking EXTMATCH to handle any extglob subexpressions, and EXTMATCH then asking GMATCH to check if each subpattern in an extglob subexpression matches a substring of the haystack. Note that in the outer loop for &lt;code&gt;!()&lt;/code&gt; here, &lt;code&gt;srest&lt;/code&gt; iterates from &lt;code&gt;s&lt;/code&gt; (rest of the haystack) to &lt;code&gt;se&lt;/code&gt; (end of the haystack) and  GMATCH is asked to check if the subpattern matches from &lt;code&gt;srest&lt;/code&gt; (EXTMATCH&amp;rsquo;s new idea of the rest of the haystack) to &lt;code&gt;s&lt;/code&gt;, so on the first iteration it&amp;rsquo;s going to be checking the empty string from &lt;code&gt;s..s&lt;/code&gt;.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// In EXTMATCH(), from sm_loop.c
+case &amp;#39;!&amp;#39;:           /* match anything *except* one of the patterns */
+  for (srest = s; srest &amp;lt;= se; srest++)
+    {
+      m1 = 0;
+      for (psub = p + 1; ; psub = pnext)
+        {
+          pnext = PATSCAN (psub, pe, L(&amp;#39;|&amp;#39;));
+          /* If one of the patterns matches, just bail immediately. */
+          if (m1 = (GMATCH (s, srest, psub, pnext - 1, NULL, flags) == 0))
+            break;
+          if (pnext == prest)
+            break;
+        }
+      ...
+      if (m1 == 0 &amp;amp;&amp;amp; GMATCH (srest, se, prest, pe, NULL, xflags) == 0)
+        return (0);
+    }
+  return (FNM_NOMATCH);
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;compiling-the-test-harness-in-globc&#34;&gt;Compiling the test harness in &lt;code&gt;glob.c&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;If you need to convince yourself that extglob works how you think it does, you can compile bash with &lt;code&gt;DEBUG_MATCHING&lt;/code&gt; defined to get debug input whenever &lt;code&gt;GMATCH&lt;/code&gt; or &lt;code&gt;EXTMATCH&lt;/code&gt; are called. You could use bash as a shell with &lt;code&gt;DEBUG_MATCHING&lt;/code&gt; defined but that resulted in a lot of debug messages that I didn&amp;rsquo;t want, so I used the little test harness in &lt;code&gt;glob.c&lt;/code&gt;, which just prints the results of matching the patterns given on the command line with the contents of the current directory. &lt;code&gt;glob.c&lt;/code&gt; depends on a lot of the same stuff that bash itself does, so it&amp;rsquo;s a lot easier to compile it in the same way that you would &lt;code&gt;bash&lt;/code&gt; instead of trying to isolate it. Here&amp;rsquo;s what worked for me.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;define &lt;code&gt;DEBUG_MATCHING&lt;/code&gt; by giving &lt;code&gt;CFLAGS&lt;/code&gt; to configure via an environment variable:&lt;/p&gt;
+&lt;p&gt;$ CFLAGS=&amp;rsquo;-g -O2 -DDEBUG_MATCHING&amp;rsquo; ./configure&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Comment out &lt;code&gt;main()&lt;/code&gt; in &lt;code&gt;shell.c&lt;/code&gt;, and uncomment &lt;code&gt;main()&lt;/code&gt; in &lt;code&gt;glob.c&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;fix iteration over the matched values in &lt;code&gt;main()&lt;/code&gt; in &lt;code&gt;glob.c&lt;/code&gt; by using a different loop variable, since &lt;code&gt;i&lt;/code&gt; is already being used to iterate over &lt;code&gt;argv&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Then, run &lt;code&gt;make&lt;/code&gt; and maybe &lt;code&gt;cp bash glob&lt;/code&gt; to give the binary a more accurate name. Then it can be run like:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ ./glob &#39;g!(lob)&#39;
+...
+gmatch: string = general.h; se =
+gmatch: pattern = g!(lob); pe =
+extmatch: xc = !
+extmatch: s = eneral.h; se =
+extmatch: p = (lob); pe =
+extmatch: flags = 33
+gmatch: string = eneral.h; se = eneral.h
+...
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Using the same colors for the terminal and Vim</title>
+      <link>http://torbiak.com/post/same_colors_in_terminal_and_vim/</link>
+      <pubDate>Thu, 25 Jan 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://torbiak.com/post/same_colors_in_terminal_and_vim/</guid>
+      <description>&lt;p&gt;In short, I&amp;rsquo;ve settled on a dark 4-bit terminal palette that is readable for the default and black background colors and use other techniques to workaround unreadable foreground/background combinations, which are mostly when two relatively light colors are put together. I do &lt;code&gt;:set t_Co=16&lt;/code&gt; in my vimrc so themes that check it use the terminal palette instead of the absolute 8-bit color model, and use autocommands to modify Vim highlight groups that colorschemes often set to an unreadable combination of my colors. And in the end I wrote a basic colorscheme to suit the terminal colors I chose.&lt;/p&gt;
+&lt;p&gt;Warning, I just learned a lot of the stuff in this post, and it&amp;rsquo;s difficult to make definitive statements about terminals due to their long history and multitude of implementations, so I bet I&amp;rsquo;m kinda wrong or at least not-technically-correct about a lot of this. Don&amp;rsquo;t trust me too much. Also, I&amp;rsquo;m writing this from a perspective of using classic Vim on Linux.&lt;/p&gt;
+&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;
+&lt;p&gt;My primary goal with terminal colors is for text to be readable, with a medium amount of contrast for the most common combinations of foreground and background colors. Years ago I remember often needing to switch Vim colorschemes or turn off syntax highlighting to avoid some highlight groups from being unreadable for certain filetypes or when I was doing a diff, which was a pain. And to save effort, if I come up with colors that are comfortable for me, I&amp;rsquo;d like to be able to use them in my most commonly used programs; at the very least in the shell and Vim.&lt;/p&gt;
+&lt;h1 id=&#34;choosing-a-color-model&#34;&gt;Choosing a color model&lt;/h1&gt;
+&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/ANSI_escape_code#Colors&#34;&gt;Wikipedia&lt;/a&gt; has some good information on the color models used in terminals. My impression is that most of the popular terminal emulators now support most of the color models that have been developed. This table isn&amp;rsquo;t exhaustive.&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;bits&lt;/th&gt;
+          &lt;th&gt;colors&lt;/th&gt;
+          &lt;th&gt;notes&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;1-bit&lt;/td&gt;
+          &lt;td&gt;2&lt;/td&gt;
+          &lt;td&gt;monochrome&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;3-bit&lt;/td&gt;
+          &lt;td&gt;8&lt;/td&gt;
+          &lt;td&gt;superceded by 4-bit, but its influence remains visible&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;4-bit&lt;/td&gt;
+          &lt;td&gt;16+2&lt;/td&gt;
+          &lt;td&gt;widely supported&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;7-ish?&lt;/td&gt;
+          &lt;td&gt;88&lt;/td&gt;
+          &lt;td&gt;4x4x4 color cube, used mostly by older terminals like rxvt and xterm-88color, &lt;a href=&#34;https://unix.stackexchange.com/a/688348/215497&#34;&gt;designed to save memory in the X server colormap vs 8-bit color&lt;/a&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;8-bit&lt;/td&gt;
+          &lt;td&gt;256&lt;/td&gt;
+          &lt;td&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit&#34;&gt;6x6x6 color cube&lt;/a&gt;, typically defined the same as in xterm. Depending on the terminal it can be possible to redefine these colors using escapes or X resources, but generally they&amp;rsquo;re considered to be &amp;ldquo;absolute&amp;rdquo;/fixed.&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;24‑bit&lt;/td&gt;
+          &lt;td&gt;lots&lt;/td&gt;
+          &lt;td&gt;&amp;ldquo;true color&amp;rdquo;, with each of RGB specified from 0-255. Definitely absolute. &lt;a href=&#34;https://github.com/termstandard/colors&#34;&gt;Fairly well-supported in terminals&lt;/a&gt;, but less so in terminal-based programs.&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;4-bit color is the obvious choice of color model when designing a custom palette, since it has been widely supported by terminals and terminal-based programs for a long time now, most terminals let you change the colors easily, and picking 18 colors doesn&amp;rsquo;t take too long. With it we can pick a default foreground color, a default background color, 8 normal colors that can always be used for the foreground or backgorund, and 8 bold/bright colors whose use can sometimes be limited to when bold is selected for the foreground, but usually can be used whenever.&lt;/p&gt;
+&lt;p&gt;To understand how the bold/bright colors are used, we need to get into the weeds a bit. The related ANSI/ECMA/ISO standards from the 1970s don&amp;rsquo;t say much on how to implement SGR 1, the &amp;ldquo;bold&amp;rdquo; escape sequence, describing it as &amp;ldquo;BOLD OR INCREASED INTENSITY&amp;rdquo;, so a common approach is for terminals to both use a bolder font as well as to change the foreground to the corresponding bright color, and in some terminals this is the only way to access the bright colors. Later terminals introduced the non-standard escape sequences SGR 90-97 and SGR 100-107 to use the bright colors independently of setting bold; xterm supports these, and for a long time xterm was both popular and the reference implementation of a terminal emulator for the X Window System, and so my impression is that most modern terminals try to be xterm-compatible, to some extent, and also support them. When I &lt;a href=&#34;#appendix-query-if-bright-background-is-supported&#34;&gt;queried terminfo&lt;/a&gt; with &lt;code&gt;tput -T&amp;quot;${term:?}&amp;quot; setab&lt;/code&gt;, the popular terminals that I could think of (and that also exist in terminfo) apparently support them too, including: konsole, kitty, alacritty, st, and VTE-based terminals like GNOME, xfce, guake, sakura, and terminator.&lt;/p&gt;
+&lt;h1 id=&#34;choosing-colors&#34;&gt;Choosing colors&lt;/h1&gt;
+&lt;p&gt;There&amp;rsquo;s a million ways to design a color scheme, but I went with &lt;a href=&#34;https://ciembor.github.io/4bit/#&#34;&gt;4bit Terminal Color Scheme Designer&lt;/a&gt;, which I&amp;rsquo;ll abbreviate as 4TCSD. It doesn&amp;rsquo;t let you control everything, but it is great for quickly choosing some colors that are collectively cohesive and individually still have the intended meaning/symbolism: for example, errors are often displayed in red, so I want my red to be red enough to convey connotations of danger. I particularly recommend playing with the &amp;ldquo;Dye&amp;rdquo; tab, which adds a color cast to a desired subset of colors, and can have a big effect on how cohesive the theme looks.&lt;/p&gt;
+&lt;img src=&#34;http://torbiak.com/post/same_colors_in_terminal_and_vim/4bit_scheme.png&#34; alt=&#34;4bit colorscheme&#34; width=&#34;800&#34; /&gt;
+&lt;p&gt;There&amp;rsquo;s also &lt;a href=&#34;https://terminal.sexy&#34;&gt;terminal.sexy&lt;/a&gt;, which is very flexible, has lots of preview facilities, included themes, and export formats. terminal.sexy is good for tweaking individual colors, but note that while it shows bright colors in the preview templates it doesn&amp;rsquo;t bold the font, so with an imported scheme from 4TCSD the bright colors probably won&amp;rsquo;t look quite how you&amp;rsquo;d expect. Still, using the &lt;code&gt;/misc/rows&lt;/code&gt; and &lt;code&gt;/misc/columns&lt;/code&gt; templates to preview the colors can help stay true to the color names while also quickly checking readability for various foreground/background combinations:&lt;/p&gt;
+&lt;img src=&#34;http://torbiak.com/post/same_colors_in_terminal_and_vim/terminal_sexy_templates.png&#34; alt=&#34;terminal.sexy templates for checking readability and color trueness&#34; width=&#34;800&#34; /&gt;
+&lt;p&gt;It doesn&amp;rsquo;t seem possible to have every foreground color be readable on every background color, so for a dark theme I tried to optimize having the foreground colors be readable on the default and black background colors while also keeping the constrast somewhere in the middle. If programs define funky color combos like yellow on green, I&amp;rsquo;m resigned to working around that as needed by choosing alternate program-specific themes or disabling color for them.&lt;/p&gt;
+&lt;p&gt;I ended up with something like in the image of 4TCSD above. Unfortunately, 4TCSD doesn&amp;rsquo;t support importing themes, so recreating something you&amp;rsquo;ve made before can be a challenge.&lt;/p&gt;
+&lt;h1 id=&#34;configuring-the-terminal&#34;&gt;Configuring the terminal&lt;/h1&gt;
+&lt;p&gt;Permanently changing the color palette is different for each terminal. My terminal&amp;rsquo;s config format wasn&amp;rsquo;t supported by 4TCSD and I initially couldn&amp;rsquo;t find any other tools to convert between formats on the command line so I wrote a quick-and-dirty script in Python called &lt;a href=&#34;https://github.com/torbiak/conv4bit/blob/main/conv4bit.py&#34;&gt;&lt;code&gt;conv4bit&lt;/code&gt;&lt;/a&gt;. Later I realized that the converter for terminal.sexy also has a command-line interface: &lt;a href=&#34;https://github.com/stayradiated/termcolors&#34;&gt;termcolors&lt;/a&gt;. terminal.sexy supports different export formats than 4TCSD, so exporting for xterm from 4TCSD and importing that as Xresources in terminal.sexy might be helpful.&lt;/p&gt;
+&lt;p&gt;A lot of terminals support using xterm-style OSC 4/10/11/12 escapes to change the 4-bit palette on-the-fly, which is especially convenient for trying out and editing themes. I had fun cloning the &lt;a href=&#34;https://github.com/Gogh-Co/Gogh&#34;&gt;Gogh&lt;/a&gt; repo, applying one of its themes with &lt;code&gt;conv4bit -ofmt osc &amp;quot;themes/${theme:?}&amp;quot; -&lt;/code&gt;, and then attaching to an existing tmux session to preview the theme in a variety of situations.&lt;/p&gt;
+&lt;h1 id=&#34;configuring-vim&#34;&gt;Configuring Vim&lt;/h1&gt;
+&lt;p&gt;Back in Vim v7.0, the builtin colorschemes used color names from &lt;code&gt;:help cterm-colors&lt;/code&gt; for color terminals, which are interpreted differently depending on &lt;code&gt;t_Co&lt;/code&gt; (explained shortly), and 24-bit color for the GUI. And in Dec 2023 (Vim v9.1) the builtin themes were rewritten using the &lt;a href=&#34;https://github.com/lifepillar/vim-colortemplate&#34;&gt;colortemplate plugin&lt;/a&gt;, and now each has specific support for 256, 16, 8, and 2 colors. The builtin themes still choose how many colors to use based on the &lt;code&gt;t_Co&lt;/code&gt; option, which represents the max number of colors that the terminal supports (up to 256) and is retrieved from the terminfo db (see the &lt;code&gt;Co&lt;/code&gt; capability in &lt;code&gt;terminfo(5)&lt;/code&gt;) based on the value of the &lt;code&gt;TERM&lt;/code&gt; environment variable, but you can override &lt;code&gt;t_Co&lt;/code&gt; in your vimrc to get themes to use a lower-fidelity color model if desired. (24-bit color, on the other hand, &lt;a href=&#34;https://github.com/termstandard/colors#checking-for-colorterm&#34;&gt;is advertised by terminals in various ways&lt;/a&gt; and can be enabled in &lt;code&gt;vim&lt;/code&gt; with &lt;code&gt;:set termguicolors&lt;/code&gt;.) So, the easiest way to get Vim to use the terminal&amp;rsquo;s 4-bit palette is to do &lt;code&gt;:set t_Co=16&lt;/code&gt; in your vimrc.&lt;/p&gt;
+&lt;p&gt;When testing out Vim color themes I&amp;rsquo;d recommend using &lt;code&gt;:help highlight-groups&lt;/code&gt; to identify unreadable groups early, and &lt;code&gt;:help group-name&lt;/code&gt; to see the hierarchy of groups commonly used for programming language syntax. Note that most of the default highlight groups have a help entry under &lt;code&gt;hl-&amp;lt;name&amp;gt;&lt;/code&gt; (eg &lt;code&gt;hl-DiffAdd&lt;/code&gt;), which describes what it&amp;rsquo;s for. Highlight groups for specific languages will mostly link to the ones defined by default.&lt;/p&gt;
+&lt;p&gt;Also, it&amp;rsquo;s quite helpful to see what syntax/highlight group is under the cursor, and the following function can be bound to a key to do that. A simplified description is that it shows the matching and linked syntax groups. The effective highlight group could be different from what &lt;code&gt;SynGroup()&lt;/code&gt; shows, though, such as when doing a diff, using visual mode, etc.  Note that syntax and highlight group names are kind of shared, and syntax group names can be used with the &lt;code&gt;:highlight&lt;/code&gt; command to create a corresponding highlight group or link to one, like with &lt;code&gt;:hi link pythonStatement Statement&lt;/code&gt;, which links the &lt;code&gt;pythonStatement&lt;/code&gt; syntax group to the &lt;code&gt;Statement&lt;/code&gt; highlight group.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;function! SynGroup()
+    let id = synID(line(&#39;.&#39;), col(&#39;.&#39;), 1)
+    echo synIDattr(id, &#39;name&#39;) . &#39; -&amp;gt; &#39; . synIDattr(synIDtrans(id), &#39;name&#39;)
+endfunction
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;There&amp;rsquo;s a few highlight groups that I dislike in a lot of the builtin themes. I almost always want my default background color to be used, so I override &lt;code&gt;Normal&lt;/code&gt; to have &lt;code&gt;ctermbg=NONE&lt;/code&gt; when 4-bit color is being used. It can be tricky to get the search-related groups emphasized enough while also being readable, and striking the right balance really depends on what your terminal colors are. And for diff, putting red/green/yellow on black for removed/added/changed seems to work well compared to using more colorful combinations, assuming black is easily distinguished from the default background color. In the snippet below, the &lt;code&gt;ColorScheme&lt;/code&gt; event fires after any (&lt;code&gt;*&lt;/code&gt;) colorscheme is loaded. See &lt;code&gt;:help colorscheme-override&lt;/code&gt; for more info on overriding colorschemes, and you may need to read the docs for autocommands as well depending on your familiarity with them. With Vim9 script you can put multiple autocommands in curly braces, but I like to keep my vimrc compatible with somewhat older Vim versions too, so I&amp;rsquo;m defining a function instead. In my vimrc:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;function ModColorScheme()
+    &amp;quot; Customize colorscheme when using 4-bit color.
+    if str2nr(&amp;amp;t_Co) == 16
+        hi Normal ctermfg=NONE ctermbg=NONE
+
+        hi Visual ctermfg=Black ctermbg=Cyan cterm=NONE
+        hi Search ctermfg=Red ctermbg=Black cterm=bold
+        hi IncSearch ctermfg=White ctermbg=DarkRed cterm=bold
+
+        hi DiffAdd ctermfg=DarkGreen ctermbg=Black cterm=NONE
+        hi DiffChange ctermfg=DarkYellow ctermbg=Black cterm=NONE
+        hi DiffDelete ctermfg=DarkRed ctermbg=Black cterm=NONE
+        hi DiffText ctermfg=Black ctermbg=DarkYellow cterm=bold
+    endif
+endfunction
+augroup color_mods
+    au!
+    au ColorScheme * call ModColorScheme()
+augroup END
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For diffs this results in:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/same_colors_in_terminal_and_vim/diff.png&#34; alt=&#34;diff example&#34;&gt;&lt;/p&gt;
+&lt;p&gt;One downside to using terminal colors is that themes on the opposite side of the light/dark spectrum probably won&amp;rsquo;t work well . My terminal colors don&amp;rsquo;t work well with light colorschemes, so if I did want to use a light theme I&amp;rsquo;d either use 8 or 24-bit color or choose a light set of terminal colors.&lt;/p&gt;
+&lt;h2 id=&#34;vims-cterm-colors&#34;&gt;Vim&amp;rsquo;s cterm-colors&lt;/h2&gt;
+&lt;p&gt;When inspecting Vim colorthemes or highlight groups, it&amp;rsquo;s helpful to know what the color names and numbers mean. As explained at &lt;code&gt;:help cterm-colors&lt;/code&gt;, Vim uses MS Windows names for colors, which is confusing if you&amp;rsquo;re thinking in terms of the ANSI names. And also, later in the Vim help it&amp;rsquo;s explained that ANSI-style terminals use the NR-8 column of numbers in the table below and add 8 for the bright variants, and this includes xterm, and thus likely also includes most terminals on Linux. Here&amp;rsquo;s the table from &lt;code&gt;:help cterm-colors&lt;/code&gt;, with a column of ANSI-ish color names added.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;NR-16  NR-8  Vim color name                    ANSI color name
+0      0     Black                             black
+1      4     DarkBlue                          blue
+2      2     DarkGreen                         green
+3      6     DarkCyan                          cyan
+4      1     DarkRed                           red
+5      5     DarkMagenta                       magenta
+6      3     Brown, DarkYellow                 yellow
+7      7     LightGray, LightGrey, Gray, Grey  white
+8      0*    DarkGray, DarkGrey                bright black
+9      4*    Blue, LightBlue                   bright blue
+10     2*    Green, LightGreen                 bright green
+11     6*    Cyan, LightCyan                   bright cyan
+12     1*    Red, LightRed                     bright red
+13     5*    Magenta, LightMagenta             bright magenta
+14     3*    Yellow, LightYellow               bright yellow
+15     7*    White                             bright white
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Basically, &lt;code&gt;DarkRed&lt;/code&gt; maps to ANSI red (1), while &lt;code&gt;LightRed&lt;/code&gt; and &lt;code&gt;Red&lt;/code&gt; map to ANSI bright red (9), and this pattern holds for all the other colors too except for white and black.&lt;/p&gt;
+&lt;p&gt;Clearly the number 9 doesn&amp;rsquo;t match the ANSI-style SGR escape sequence to set the foreground to bright red, which is SGR 91. 9 will get translated to the appropriate escape sequence for the terminal during display, likely by &lt;a href=&#34;https://github.com/mirror/ncurses/blob/master/ncurses/tinfo/lib_tparm.c&#34;&gt;ncurses&lt;/a&gt; in concert with terminfo. For example, the terminfo &lt;code&gt;setaf&lt;/code&gt; or &amp;ldquo;Set ANSI Foreground&amp;rdquo; capability gives a recipe in a simple stack-based programming language (described in &lt;code&gt;terminfo(5)&lt;/code&gt;) to translate the color number to the right escape sequence for the current terminal, and the &lt;code&gt;tput&lt;/code&gt; program that comes with ncurses can interpret that recipe.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;tput_demo.sh&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+set -eu
+setaf=$(tput setaf)
+set_fg_red=$(tput setaf 1)
+set_fg_bright_red=$(tput setaf 9)
+clear_attrs=$(tput sgr0)
+
+declare -p setaf set_fg_red set_fg_bright_red clear_attrs
+echo &amp;quot;${set_fg_red}hi ${set_fg_bright_red}there ${clear_attrs}again&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And in a terminal with different colors defined for red and bright red:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/same_colors_in_terminal_and_vim/tput_demo.png&#34; alt=&#34;tput demo&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;writing-a-vim-colorscheme&#34;&gt;Writing a Vim colorscheme&lt;/h1&gt;
+&lt;p&gt;I&amp;rsquo;ve been pretty happy using the &lt;code&gt;pablo&lt;/code&gt; or &lt;code&gt;default&lt;/code&gt; builtin colorschemes along with my set of terminal colors since 2016, but after writing the first version of this post and learning more about how colors and themes work in Vim, I started overriding more and more highlight groups that I wasn&amp;rsquo;t totally happy with until it was obvious that I should just write my own theme. For people writing configurable themes with light and dark variants for multiple color models and both Vim and Neovim it makes sense to script the theme generation, but since I just wanted a 4-bit dark theme for Vim and the palette is already set, I didn&amp;rsquo;t need any indirection and simply modified a list of &lt;code&gt;:highlight&lt;/code&gt; commands  based on the &lt;code&gt;default&lt;/code&gt; scheme.&lt;/p&gt;
+&lt;p&gt;I used &lt;a href=&#34;https://github.com/lifepillar/vim-colortemplate&#34;&gt;colortemplate&lt;/a&gt; to generate a clone of the &lt;code&gt;default&lt;/code&gt; theme using its &lt;a href=&#34;https://github.com/lifepillar/vim-colortemplate/blob/master/templates/default_clone.colortemplate&#34;&gt;default_clone.colortemplate&lt;/a&gt; and then removed almost everything except the header and 4-bit &lt;code&gt;if s:t_Co &amp;gt;= 16&lt;/code&gt; section, but you could also just take the 4-bit section from any other builtin theme in Vim v9.1+, since they&amp;rsquo;re all generated with colortemplate. Prior to v9.1 some of the builtin themes don&amp;rsquo;t override all of the groups that &lt;code&gt;default&lt;/code&gt; defines, so they&amp;rsquo;re less useful as templates.&lt;/p&gt;
+&lt;p&gt;I ended up with &lt;a href=&#34;http://torbiak.com/post/same_colors_in_terminal_and_vim/forbit.vim&#34;&gt;forbit.vim&lt;/a&gt;, which starts like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;snip header&amp;gt;
+
+set background=dark
+hi clear
+let g:colors_name = &#39;forbit&#39;
+
+hi Normal ctermfg=NONE ctermbg=NONE cterm=NONE
+hi Comment ctermfg=lightblue ctermbg=NONE cterm=NONE
+hi Constant ctermfg=darkmagenta ctermbg=NONE cterm=NONE
+&amp;lt;continues...&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To apply a colorscheme they just get sourced, so you could put it anywhere, but Vim looks for colorschemes in a few locations by default, including &lt;code&gt;~/.vim/colors&lt;/code&gt;, so after putting it there I could simply run &lt;code&gt;:colorscheme forbit&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;forbit doesn&amp;rsquo;t pass the &lt;code&gt;$VIMRUNTIME/colors/tools/check_colors.vim&lt;/code&gt; script, which is recommended for colorschemes that are intended to be shared, but it&amp;rsquo;s good enough for my purposes. The point is to make it easy for me to customize colors as needed, which I wish I had started doing earlier.&lt;/p&gt;
+&lt;h1 id=&#34;see-also&#34;&gt;See also&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://jeffkreeftmeijer.com/vim-16-color/&#34;&gt;Consistent terminal colors with 16-ANSI-color Vim themes&lt;/a&gt;
+discusses a different approach: instead of setting &lt;code&gt;t_Co&lt;/code&gt;, Jeff wrote a colorscheme that uses 4-bit color numbers directly and redefines all the highlight groups that are defined by default. Vim maps the &lt;code&gt;cterm-colors&lt;/code&gt; names to numbers based on &lt;code&gt;t_Co&lt;/code&gt;, and the default colorscheme is specified in terms of color names, so if &lt;code&gt;t_Co == 256&lt;/code&gt; then some of the highlight groups will start out with colors in the 8-bit space from 16-255. I think there could be a small downside to this approach in that non-ANSI terminals won&amp;rsquo;t display the colors in the theme as intended, due to the different number-to-color mapping.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/Gogh-Co/Gogh&#34;&gt;Gogh&lt;/a&gt; has a bunch of 4-bit themes specified in YAML/JSON and includes scripts to install them for various terminals.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://ciembor.github.io/4bit/#&#34;&gt;4bit Terminal Color Scheme Designer&lt;/a&gt; is a streamlined theme creator&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://terminal.sexy&#34;&gt;terminal.sexy&lt;/a&gt; is a more free-form theme creator&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/stayradiated/termcolors&#34;&gt;termcolors&lt;/a&gt; is a Javascript theme format converter that supports a bunch of formats&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/torbiak/conv4bit/blob/main/conv4bit.py&#34;&gt;&lt;code&gt;conv4bit&lt;/code&gt;&lt;/a&gt; is my Python theme format converter that supports a few formats&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;appendix-query-if-bright-background-is-supported&#34;&gt;Appendix: query if bright background is supported&lt;/h1&gt;
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+set -euo pipefail
+
+terms=(
+    terminator
+    alacritty
+    konsole-256color
+    gnome-256color
+    kitty
+    st-256color
+    xterm-256color
+    vte-256color
+)
+for t in &amp;quot;${terms[@]}&amp;quot;; do
+    setab=$(tput -T&amp;quot;$t&amp;quot; setab) || continue
+    # Look for the &amp;quot;then&amp;quot; (%t) part of a conditional which does:
+    # - 10: print &amp;quot;10&amp;quot;
+    # - %p1: push param1 on the stack
+    # - %{8}: push a literal 8 on the stack
+    # - %-: pop the top two values and push their difference
+    # - %d: pop a value and print it as a int
+    [[ &amp;quot;$setab&amp;quot; = *&#39;%t10%p1%{8}%-%d&#39;* ]] &amp;amp;&amp;amp; bright_bg=yes || bright_bg=no
+    echo &amp;quot;$t $bright_bg&amp;quot;
+done
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;addendum-changelog&#34;&gt;Addendum: changelog&lt;/h1&gt;
+&lt;h2 id=&#34;2024-02-12&#34;&gt;2024-02-12&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Remove paragraph about 4TCSD themes having the same color for the normal and bright variants; somehow I didn&amp;rsquo;t notice my color lightness sliders were overlapping. Update the 4TCSD screenshot, too.&lt;/li&gt;
+&lt;li&gt;Update vimrc snippets to avoid Vim9 script for now.&lt;/li&gt;
+&lt;li&gt;Mention better ways to check highlight groups: &lt;code&gt;:help group-name&lt;/code&gt; and &lt;code&gt;:help highlight-groups&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Add section on writing my own Vim colorscheme.&lt;/li&gt;
+&lt;li&gt;Mention &lt;code&gt;conv4bit&lt;/code&gt;, a script to convert between 4-bit theme formats.&lt;/li&gt;
+&lt;li&gt;Move the terminfo querying script into the appendix instead of linking to the file.&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Normalize volume system-wide with PulseAudio</title>
+      <link>http://torbiak.com/post/normalize_volume/</link>
+      <pubDate>Wed, 20 Dec 2023 00:00:00 +0000</pubDate>
+      
+      <guid>http://torbiak.com/post/normalize_volume/</guid>
+      <description>&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;
+&lt;p&gt;I usually watch YouTube videos while I wash dishes, and if videos have very different volume levels it can be either annoying to not understand what&amp;rsquo;s being said or painful to endure loud sounds while I dry my hands so that I can adjust the volume. So I&amp;rsquo;ve been delighted over the past couple years using a compressor filter from &lt;a href=&#34;http://plugin.org.uk/&#34;&gt;Steve Harris&amp;rsquo; LADSPA plugin suite&lt;/a&gt; with PulseAudio to normalize volume for all audio output from my laptop. I&amp;rsquo;m quite willing to trade dynamic range for listening comfort, and for me even music doesn&amp;rsquo;t sound noticeably worse with the compressor filter.&lt;/p&gt;
+&lt;p&gt;In case you&amp;rsquo;re wondering, &lt;a href=&#34;http://ladspa.org/&#34;&gt;LADSPA&lt;/a&gt; is the Linux Audio Developer&amp;rsquo;s Simple Plugin API, and basically it&amp;rsquo;s an interface for shared libraries that allows plugins to define some control ports/params and give callbacks to process samples. It&amp;rsquo;s like a simpler version of &lt;a href=&#34;https://en.wikipedia.org/wiki/Virtual_Studio_Technology&#34;&gt;VST&lt;/a&gt;, if you&amp;rsquo;ve ever used synth or effects plugins in a DAW and have heard of that.&lt;/p&gt;
+&lt;h1 id=&#34;pulseaudio-configuration&#34;&gt;PulseAudio configuration&lt;/h1&gt;
+&lt;p&gt;For configuring PulseAudio I referred to &lt;a href=&#34;https://askubuntu.com/a/44012&#34;&gt;this answer on the Ask Ubuntu StackExchange&lt;/a&gt;. On Arch I installed the &lt;code&gt;swh-plugins&lt;/code&gt; package. I then added a PulseAudio config drop-in under &lt;code&gt;/etc/pulse/defaultpa.d&lt;/code&gt;, although you could instead add it to a per-user config in &lt;code&gt;$XDG_CONFIG_HOME/pulse/client.conf&lt;/code&gt;, &lt;a href=&#34;https://wiki.archlinux.org/title/PulseAudio/Examples#Creating_user_configuration_files&#34;&gt;as described on the Arch wiki&lt;/a&gt;. For PulseAudio CLI syntax and commands, see the &lt;code&gt;pulse-cli-syntax(5)&lt;/code&gt; manpage.&lt;/p&gt;
+&lt;p&gt;Sorry about the long lines in this and several other snippets, but neither PulseAudio CLI syntax or udev rules support line continuations and the likely confusion over including &amp;ldquo;fake&amp;rdquo; ones doesn&amp;rsquo;t seem worth it.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;/etc/pulse/defaultpa.d/compressor.pa&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;.ifexists module-ladspa-sink.so
+.nofail
+load-module module-ladspa-sink sink_name=compressor plugin=sc4_1882 label=sc4 control=1,1.5,400,-30,20,5,24
+set-default-sink compressor
+.fail
+.endif
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;module-ladspa-sink&lt;/code&gt; takes a &lt;code&gt;sink_master&lt;/code&gt; param (previously named &lt;code&gt;master&lt;/code&gt;) to define where the processed audio goes, but I&amp;rsquo;m leaving it as the default. See &lt;a href=&#34;https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/#module-ladspa-sink&#34;&gt;the PulseAudio builtin module docs&lt;/a&gt;. If you wanted to route the output to a different sink, you can find its name with &lt;code&gt;pactl list short sinks&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;I&amp;rsquo;m still using the SC4 filter settings from that Ask Ubuntu answer, except that I&amp;rsquo;ve increased the makeup gain so there&amp;rsquo;s a smaller volume difference between having the filter on/off, to avoid having sound blaring if I ever accidentally turn off the filter. Mostly the knobs are cranked to always be compressing as soon and hard as possible, except knee radius, which is set in the middle of the allowed values, but when adjusting it I can&amp;rsquo;t notice a difference. With these settings it feels like the volume is always being reduced, which seems good to me.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;RMS/peak ratio: 1&lt;/li&gt;
+&lt;li&gt;Attack time (ms): 1.5&lt;/li&gt;
+&lt;li&gt;Release time (ms): 400&lt;/li&gt;
+&lt;li&gt;Threshold level (dB): -30&lt;/li&gt;
+&lt;li&gt;Gain reduction ratio (1:n): 20&lt;/li&gt;
+&lt;li&gt;Knee radius: 5&lt;/li&gt;
+&lt;li&gt;Makeup gain (dB): 24&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If you want to get a better sense of how the filter params work and see their allowed ranges, here&amp;rsquo;s &lt;a href=&#34;https://github.com/swh/ladspa/blob/master/sc4_1882.xml&#34;&gt;the code for the SC4 filter&lt;/a&gt;. And if you&amp;rsquo;re looking at the code you might also want to peek at &lt;a href=&#34;http://ladspa.org/ladspa_sdk/ladspa.h.txt&#34;&gt;the little LADSPA spec&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;After writing the PulseAudio config, I use &lt;code&gt;pulseaudio -k&lt;/code&gt; to kill the server, and then the stock &lt;code&gt;systemd&lt;/code&gt; config for my system immediately restarts it for me with the new settings. I can see any errors with my PulseAudio config by following syslog with &lt;code&gt;journalctl -f&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The above config might be all you need, but I needed to do a bit more to have things work with my Bluetooth headphones.&lt;/p&gt;
+&lt;h1 id=&#34;manually-route-a-ladspa-sink-to-bluetooth-headphones&#34;&gt;Manually route a LADSPA sink to Bluetooth headphones&lt;/h1&gt;
+&lt;p&gt;When you connect Bluetooth headphones a new sink gets added to PulseAudio, but unless we do something our compressor is going to stay routed to our ALSA output or wherever we pointed it at PulseAudio startup, and the output to the headphones won&amp;rsquo;t be filtered. For a few years I was keeping a &lt;code&gt;pavucontrol&lt;/code&gt; window open and manually rerouting the compressor&amp;rsquo;s output to my headphones after connecting them, but when I set up my new laptop &lt;code&gt;pavucontrol&lt;/code&gt; no longer gave me a dropdown to do manual routing for LADSPA sinks, and I haven&amp;rsquo;t figured out why yet. So, I started running a little script every time I connected my headphones, which adds another LADSPA sink with the output routed to my headphones. The sink name is based on the headphones&amp;rsquo; MAC address, and is constant, so I just needed to look it up once using &lt;code&gt;pactl list short sinks&lt;/code&gt; and provide it as the &lt;code&gt;sink_master&lt;/code&gt; param.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pacmd &amp;lt;&amp;lt;EOF
+load-module module-ladspa-sink sink_name=bluetooth_compressor plugin=sc4_1882 label=sc4 sink_master=bluez_sink.00_1B_66_A1_45_12.a2dp_sink control=1,1.5,400,-30,20,5,24
+set-default-sink bluetooth_compressor
+EOF
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After disconnecting the headphones the LADSPA sink gets destroyed, so back when I was doing the routing in &lt;code&gt;pavucontrol&lt;/code&gt; I would either need to change the LADSPA sink&amp;rsquo;s master back to my soundcard before disconnecting my headphones to avoid it getting destroyed, or I&amp;rsquo;d need to recreate the sink by restarting pulseaudio. With my new laptop my problem was that after the LADSPA sink for my headphones was destroyed, PulseAudio would choose my soundcard as the default sink instead of the compressor that outputs to it. I could run another script after disconnecting my headphones, but instead I finally had the motivation to automate the routing. I couldn&amp;rsquo;t figure out how to fix this with the &lt;a href=&#34;https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/&#34;&gt;builtin PulseAudio modules&lt;/a&gt;, and I considered writing a PulseAudio module to allow prioritizing sinks, but running shell scripts on Bluetooth connection/disconnection events seemed easier and more flexible.&lt;/p&gt;
+&lt;h1 id=&#34;automatically-route-a-ladspa-sink-to-bluetooth-headphones&#34;&gt;Automatically route a LADSPA sink to Bluetooth headphones&lt;/h1&gt;
+&lt;h2 id=&#34;find-udev-info&#34;&gt;Find udev info&lt;/h2&gt;
+&lt;p&gt;udev is part of systemd and lets us run shell scripts or start systemd services on hardware events. &lt;code&gt;udev(7)&lt;/code&gt; is a useful reference when writing rules, and &lt;a href=&#34;https://wiki.archlinux.org/title/Udev&#34;&gt;the Arch wiki page on it&lt;/a&gt; has some good info, too. Before writing the rule I needed to find some way to identify my headphones. By running &lt;code&gt;udevadm monitor&lt;/code&gt; before connecting my headphones, I could see the related devices the kernel makes on connection:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ udevadm monitor
+...
+KERNEL[80470.275026] add      /devices/pci0000:00/0000:00:08.1/0000:c1:00.3/usb1/1-5/1-5:1.0/bluetooth/hci0/hci0:50 (bluetooth)
+UDEV  [80470.276714] add      /devices/pci0000:00/0000:00:08.1/0000:c1:00.3/usb1/1-5/1-5:1.0/bluetooth/hci0/hci0:50 (bluetooth)
+KERNEL[80472.139125] add      /devices/virtual/input/input28 (input)
+KERNEL[80472.139222] add      /devices/virtual/input/input28/event13 (input)
+UDEV  [80472.140796] add      /devices/virtual/input/input28 (input)
+UDEV  [80472.172162] add      /devices/virtual/input/input28/event13 (input)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And I could get more information about devices with &lt;code&gt;udevadm info -ap&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ udevadm info -ap /devices/virtual/input/input28
+...
+  looking at device &#39;/devices/virtual/input/input28&#39;:
+    KERNEL==&amp;quot;input28&amp;quot;
+    SUBSYSTEM==&amp;quot;input&amp;quot;
+    DRIVER==&amp;quot;&amp;quot;
+    ...
+    ATTR{id/bustype}==&amp;quot;0005&amp;quot;
+    ATTR{id/product}==&amp;quot;004b&amp;quot;
+    ATTR{id/vendor}==&amp;quot;0082&amp;quot;
+    ATTR{id/version}==&amp;quot;0103&amp;quot;
+    ATTR{inhibited}==&amp;quot;0&amp;quot;
+    ATTR{name}==&amp;quot;HD1 M2 AEBT (AVRCP)&amp;quot;
+    ATTR{phys}==&amp;quot;14:ac:60:46:87:9e&amp;quot;
+    ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I don&amp;rsquo;t know how to write a udev rule that would match all Bluetooth headphones, but this is enough information to write a rule for my specific ones, at least. An important thing to note now, though, is that the pulseaudio daemon is per-user, so I need to run &lt;code&gt;pacmd&lt;/code&gt; as my user. I could use the &lt;code&gt;RUN&lt;/code&gt; operator in the udev rule along with &lt;code&gt;sudo -u &amp;lt;user&amp;gt;&lt;/code&gt; and have separate rules for &lt;code&gt;ACTION==&amp;quot;add&amp;quot;&lt;/code&gt; and &lt;code&gt;ACTION==&amp;quot;remove&amp;quot;&lt;/code&gt;, but hard-coding my username feels kinda bad, so instead I went with using &lt;code&gt;ENV{SYSTEMD_USER_WANTS}&lt;/code&gt; and writing a device-bound systemd user service that&amp;rsquo;ll automatically be stopped when the device goes away. To make that work, I need to &lt;code&gt;TAG+=&amp;quot;systemd&amp;quot;&lt;/code&gt; the device so systemd picks it up, and somehow give the device name that systemd uses to a parametrized service (&amp;ldquo;instantiated&amp;rdquo; in systemd parlance), so it can be bound to it.&lt;/p&gt;
+&lt;p&gt;With a udev rule like this in &lt;code&gt;/etc/udev/rules.d/99-sennheiser.rules&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ACTION==&amp;quot;add&amp;quot;, ATTR{name}==&amp;quot;HD1 M2 AEBT (AVRCP)&amp;quot;, TAG+=&amp;quot;systemd&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And after reloading the udev rules:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo udevadm control --reload
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;When I connect the headphones I see a corresponding device in my &lt;code&gt;systemctl&lt;/code&gt; output:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;UNIT                                      LOAD    ACTIVE  SUB      DESCRIPTION
+sys-devices-virtual-input-input28.device  loaded  active  plugged  /sys/devices/virtual/input/input28
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Which is cool, but not terribly useful yet. We&amp;rsquo;ll come back to writing the udev rule. First I need to figure out what the systemd user service will be like, so I know what parameters it needs.&lt;/p&gt;
+&lt;h2 id=&#34;systemd-user-service&#34;&gt;systemd user service&lt;/h2&gt;
+&lt;p&gt;Instantiated systemd services are named such that there&amp;rsquo;s an &lt;code&gt;@&lt;/code&gt; before the unit extension and then, when being started, they can be given an argument in their name after the &lt;code&gt;@&lt;/code&gt;. For example, if you run &lt;code&gt;systemctl&lt;/code&gt; you&amp;rsquo;ll probably see a &lt;code&gt;getty@tty1.service&lt;/code&gt;, where &lt;code&gt;getty@.service&lt;/code&gt; is the unit name and &lt;code&gt;tty1&lt;/code&gt; is the argument. I put my service file at &lt;code&gt;$XDG_CONFIG_HOME/systemd/user/bt-compress@.service&lt;/code&gt;. After modifying that file I need to run &lt;code&gt;systemctl --user daemon-reload&lt;/code&gt; to load the changes and use &lt;code&gt;journalctl&lt;/code&gt; when connecting my headphones to look for errors in syslog. There&amp;rsquo;s not much point &amp;ldquo;installing&amp;rdquo; our service in the systemd sense, since we can&amp;rsquo;t start it unless the headphones are connected, so our service file doesn&amp;rsquo;t have an &lt;code&gt;[Install]&lt;/code&gt; section, and it won&amp;rsquo;t show up in &lt;code&gt;systemctl --user&lt;/code&gt; output unless it&amp;rsquo;s running or failed.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;$XDG_CONFIG_HOME/systemd/user/bt-compress@.service&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;[Unit]
+BindTo=%i.device
+After=%i.device
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=%h/bin/bt-compress start
+ExecStop=%h/bin/bt-compress stop
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;By default a systemd service is &lt;code&gt;Type=simple&lt;/code&gt; and the &lt;code&gt;ExecStart&lt;/code&gt; option will run a long-running process, but we just need to run some short shell scripts at the beginning and end of the device&amp;rsquo;s life. Looking through &lt;code&gt;systemd.service(5)&lt;/code&gt;, we see that for &lt;code&gt;Type=oneshot&lt;/code&gt; the service is considered up after the &lt;code&gt;ExecStart&lt;/code&gt; program exits for the purpose of starting dependencies, but it will soon transition to the &amp;ldquo;dead&amp;rdquo; state unless we also give &lt;code&gt;RemainAfterExit=yes&lt;/code&gt;. We need it to &amp;ldquo;remain after exit&amp;rdquo; so that systemd has an active service to stop when the device goes away.&lt;/p&gt;
+&lt;p&gt;The escapes available in systemd units can be found in &lt;code&gt;systemd.unit(5)&lt;/code&gt;. &lt;code&gt;%h&lt;/code&gt; expands to the user&amp;rsquo;s home directory and &lt;code&gt;%i&lt;/code&gt; expands to the string between &lt;code&gt;@&lt;/code&gt; and &lt;code&gt;.service&lt;/code&gt; in the service name. So, we&amp;rsquo;d like to pass the extension-less systemd device unit name in there, which we saw in the last section was &lt;code&gt;sys-devices-virtual-input-input28&lt;/code&gt;. But if I reconnect my headphones I see that the number at the end of the name increments each time I connect, so it seems like we&amp;rsquo;ll need to get the device path and convert it to the systemd device unit name in the udev rule somehow.&lt;/p&gt;
+&lt;h2 id=&#34;pulseaudio-configuration-script&#34;&gt;PulseAudio configuration script&lt;/h2&gt;
+&lt;p&gt;But before we get to the udev rule, here&amp;rsquo;s the script that our systemd service calls. It&amp;rsquo;s pretty straightforward:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;~/bin/bt-compress&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+set -euo pipefail
+
+log() {
+    local lvl=${1:?No level given}; shift
+    local msg=${1:?No message given}; shift
+    logger -p &amp;quot;$lvl&amp;quot; -t bt-compress &amp;quot;$msg&amp;quot;
+}
+
+usage=&amp;quot;bt-compress start|stop&amp;quot;
+if [[ $# -ne 1 ]]; then
+    echo &amp;quot;$usage&amp;quot; &amp;gt;&amp;amp;2
+    exit 1
+fi
+cmd=${1}; shift
+case &amp;quot;$cmd&amp;quot; in
+start)
+    log info &#39;set bluetooth_compressor as default sink&#39;
+    pacmd &amp;lt;&amp;lt;EOF
+load-module module-ladspa-sink sink_name=bluetooth_compressor plugin=sc4_1882 label=sc4 sink_master=bluez_sink.00_1B_66_A1_45_12.a2dp_sink control=1,1.5,400,-30,20,5,12
+set-default-sink bluetooth_compressor
+EOF
+;;
+stop)
+    log info &#39;set compressor as default sink&#39;
+    pacmd &#39;set-default-sink compressor&#39;
+;;
+*)
+    echo &amp;quot;unexpected cmd: $cmd&amp;quot; &amp;gt;&amp;amp;2
+    exit 1
+;;
+esac
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;udev-rule&#34;&gt;udev rule&lt;/h2&gt;
+&lt;p&gt;Finally, let&amp;rsquo;s wire up udev and systemd. According to &lt;code&gt;systemd.device(5)&lt;/code&gt;, the &lt;code&gt;SYSTEMD_USER_WANTS&lt;/code&gt; udev device property adds a &lt;code&gt;Wants=&lt;/code&gt; dependency from a device to a service, and is read by user service manager instances. And according to &lt;code&gt;udev(7)&lt;/code&gt;, we can set device properties using &lt;code&gt;ENV{&amp;lt;key&amp;gt;}=&amp;lt;value&amp;gt;&lt;/code&gt;. And if we use &lt;code&gt;udevadm test&lt;/code&gt; to inspect the device properties, we can see that the &lt;code&gt;DEVPATH&lt;/code&gt; property is included:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ sudo udevadm test --action=&amp;quot;add&amp;quot; /devices/virtual/input/input28
+...
+DEVPATH=/devices/virtual/input/input28
+PRODUCT=5/82/4b/103
+NAME=&amp;quot;HD1 M2 AEBT (AVRCP)&amp;quot;
+PHYS=&amp;quot;14:ac:60:46:87:9e&amp;quot;
+PROP=0
+EV=100007
+KEY=...
+REL=0
+MODALIAS=...
+ACTION=add
+SUBSYSTEM=input
+TAGS=:seat:systemd:
+ID_INPUT=1
+ID_INPUT_KEY=1
+ID_BUS=bluetooth
+CURRENT_TAGS=:seat:systemd:
+SYSTEMD_USER_WANTS=bt-compress@.service
+USEC_INITIALIZED=259580475046
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Apparently we&amp;rsquo;re doing what systemd considers the usual thing, since if we just set &lt;code&gt;SYSTEMD_USER_WANTS&lt;/code&gt; to our base service name, &lt;code&gt;bt-compress@.service&lt;/code&gt;, it&amp;rsquo;ll automatically pick up the &lt;code&gt;DEVPATH&lt;/code&gt; from the udev event, prefix it with the sysfs mount point, escape it, and give the escaped device path as the argument to our service. So our udev rule can just be this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ACTION==&amp;quot;add&amp;quot;, ATTR{name}==&amp;quot;HD1 M2 AEBT (AVRCP)&amp;quot;, TAG+=&amp;quot;systemd&amp;quot;, ENV{SYSTEMD_USER_WANTS}=&amp;quot;bt-compress@.service&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If you have trouble getting this to work, using &lt;code&gt;udevadm test&lt;/code&gt; as above can be useful, as it prints a bunch of diagnostics, which I have elided here.&lt;/p&gt;
+&lt;p&gt;But if we needed to do the escaping ourselves, we could use &lt;code&gt;systemd-escape&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ systemd-escape --template bt-compress@.service --path /sys/devices/virtual/input/input28
+bt-compress@sys-devices-virtual-input-input28.service
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And surprisingly to me, there&amp;rsquo;s a udev key for running shell commands and capturing their output: the &lt;code&gt;PROGRAM&lt;/code&gt; key. The results of &lt;code&gt;PROGRAM&lt;/code&gt; are then available via the &lt;code&gt;%c&lt;/code&gt; or &lt;code&gt;$result&lt;/code&gt; escape, and while the manpage doesn&amp;rsquo;t currently include the &lt;code&gt;ENV&lt;/code&gt; key in the list of keys where escapes are available, it apparently works. Note that &lt;code&gt;$devpath&lt;/code&gt; doesn&amp;rsquo;t include the sysfs mount point, so we need to add it when running &lt;code&gt;systemd-escape&lt;/code&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ACTION==&amp;quot;add&amp;quot;, ATTR{name}==&amp;quot;HD1 M2 AEBT (AVRCP)&amp;quot;, TAG+=&amp;quot;systemd&amp;quot;, PROGRAM=&amp;quot;/usr/bin/systemd-escape -p --template=bt-compress@.service /sys$devpath&amp;quot;, ENV{SYSTEMD_USER_WANTS}+=&amp;quot;$result&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;good-luck&#34;&gt;Good luck&lt;/h1&gt;
+&lt;p&gt;I doubt you got this far unless you&amp;rsquo;re motivated enough to set something similar up on your own machine. Good luck, and I hope this helped.&lt;/p&gt;
+&lt;h1 id=&#34;addendum-change-log&#34;&gt;Addendum: change log&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;2024-03-23: Change release time from 401ms to 400ms. I must have hit Ctrl-A in Vim and incremented it by one.&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Revisiting pruned approaches</title>
+      <link>http://torbiak.com/post/revisiting_pruned_approaches/</link>
+      <pubDate>Fri, 29 Sep 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://torbiak.com/post/revisiting_pruned_approaches/</guid>
+      <description>&lt;p&gt;Recently I&amp;rsquo;ve noticed a few cases where I&amp;rsquo;ve been solving a problem and determined that some approach doesn&amp;rsquo;t work, only to get stuck on other approaches too and finally return to the supposedly broken approach and realize that it actually works. Occasionally I&amp;rsquo;ll explicitly set out to rewrite a piece of broken code using the same approach and it&amp;rsquo;ll work and I can compare the two, but for most problems the history will be gone and I&amp;rsquo;m left wondering what I was doing wrong before.&lt;/p&gt;
+&lt;p&gt;This doesn&amp;rsquo;t only happen for programming problems, either. I was searching through my journal looking for something else yesterday and happened to see an unsuccessful skin-care regime I undertook about a year ago. It called for the use of two products and I followed it for a week but it worsened my skin&amp;rsquo;s condition so much that I stopped. A few months ago I started using one of the products alone, having completely forgotten about my prior experience, and it proved super effective. I likely could have seen those results a year earlier if I&amp;rsquo;d changed one variable at a time and hadn&amp;rsquo;t conflated the failure of the combo with the failure of each individually.&lt;/p&gt;
+&lt;p&gt;These false negatives for good approaches aren&amp;rsquo;t surprising: I fail to solve many problems on the first try even when I&amp;rsquo;m using an approach that&amp;rsquo;s been shown by others to work. And when it&amp;rsquo;s unclear why something is broken, as it often is, it&amp;rsquo;s easy to get the impression that the approach is hopeless without having enough information to confidently rule it out. The best strategy I can think of to mitigate the cost of these false negatives is to take better notes. I often take notes of the approaches I&amp;rsquo;m trying, but clearly I need to be more disciplined in noting why I abandon an approach as well so I can judge later whether I did so mistakenly.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;See also&lt;/strong&gt;: Nelson Elhage&amp;rsquo;s &lt;a href=&#34;https://blog.nelhage.com/2010/06/lab-notebooking-for-the-software-engineer/&#34;&gt;Lab Notebooking for the Software Engineer&lt;/a&gt;, which gave more purpose to my existing notetaking habit.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Histograms of timestamped data: gnuplot vs matplotlib</title>
+      <link>http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/</link>
+      <pubDate>Sun, 16 Jul 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/</guid>
+      <description>&lt;h1 id=&#34;introduction&#34;&gt;Introduction&lt;/h1&gt;
+&lt;p&gt;I wanted to learn a charting tool that is:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;convenient enough to quickly create rough data visualizations without it feeling like an indulgent digression&lt;/li&gt;
+&lt;li&gt;fast enough to visualize large datasets, maybe millions of points&lt;/li&gt;
+&lt;li&gt;scriptable, so chart source code plays well with version control&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Without doing much research on the options I decided to start with the venerable gnuplot. Data I&amp;rsquo;ve needed to analyze at previous jobs have always been time series or event streams, so I chose visualizing my bash history as a practice task. After working through a series of charts of increasing sophistication with gnuplot I started worrying that other tools might be more convenient, so I replicated my gnuplot journey with matplotlib. In the end my worries were unfounded and I&amp;rsquo;m actually pretty happy with gnuplot, especially for quick-and-dirty jobs. matplotlib certainly has some advantages, like having a popular, sensible language like Python as its interface, and possibly being an alternative to R when used along with &lt;a href=&#34;http://pandas.pydata.org/pandas-docs/stable/index.html&#34;&gt;pandas&lt;/a&gt;, but gnuplot&amp;rsquo;s brevity is difficult to resist.&lt;/p&gt;
+&lt;p&gt;I&amp;rsquo;ve been disappointed with the resources I&amp;rsquo;ve found for charting timestamped data in both gnuplot and matplotlib, motivating me to share my experience.&lt;/p&gt;
+&lt;p&gt;If you&amp;rsquo;re less interested in the progression and just want to see how I&amp;rsquo;d recommend making a chart like the below from a timestamped log, skip &lt;a href=&#34;#multiple-distributions-stacked-bars&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_gp_stackedbars.svg&#34; alt=&#34;shellhist_gp_stackedbars.svg&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;the-data&#34;&gt;The data&lt;/h1&gt;
+&lt;p&gt;I&amp;rsquo;m examining my &lt;code&gt;bash&lt;/code&gt; history to see when I&amp;rsquo;ve been most active over the past couple days. To get some data we can set &lt;code&gt;HISTTIMEFORMAT&lt;/code&gt; so &lt;code&gt;bash&lt;/code&gt;&amp;rsquo;s &lt;code&gt;history&lt;/code&gt; command annotates entries with timestamps:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ HISTTIMEFORMAT=&amp;quot;%Y-%m-%dT%H:%M:%S &amp;quot; history &amp;gt;shellhist
+$ tail shellhist
+10215  2017-07-01T09:52:36 make dist
+10216  2017-07-01T09:52:40 git tag
+10217  2017-07-01T09:52:44 git tag v0.002003
+10218  2017-07-01T09:52:57 cpan-upload -u TORBIAK App-Git-Autofixup.tar.gz
+10219  2017-07-01T09:53:08 git push
+10220  2017-07-01T09:53:13 git push --tags
+10221  2017-07-01T09:53:31 make realclean
+10222  2017-07-01T09:53:36 rm App-Git-Autofixup-0.002003.tar.gz
+10223  2017-07-01T09:53:38 fg
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;gnuplot&#34;&gt;gnuplot&lt;/h1&gt;
+&lt;h2 id=&#34;a-rough-start-points&#34;&gt;A rough start: points&lt;/h2&gt;
+&lt;p&gt;To get a rough visualization of when commands were entered we can tell gnuplot we&amp;rsquo;re dealing with time data on the x-axis by setting &lt;code&gt;xdata time&lt;/code&gt; and &lt;code&gt;timefmt&lt;/code&gt; and plot each command as a point, spreading the points across the y-axis at random to make it easier to get a sense of their density. gnuplot interprets &lt;code&gt;using 2:(rand(0))&lt;/code&gt; to mean that we&amp;rsquo;re using the second column of &lt;code&gt;shellhist&lt;/code&gt; for the x-values, and random floats in the interval [0:1] as the y-values. The parentheses around &lt;code&gt;rand(0)&lt;/code&gt; are necessary to signal that we want to use the value of an expression instead of selecting a column from the data file.&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;shellhist_gp_points.gp&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;set xdata time
+set timefmt &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;
+plot &#39;shellhist&#39; using 2:(rand(0)) with points
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Plot the script from the gnuplot prompt with &lt;code&gt;load &#39;shellhist_gp_points.gp&#39;&lt;/code&gt; or using a shell command like:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;GNUTERM=svg gnuplot shellhist_gp_points.gp &amp;gt;shellhist_gp_points.svg
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_gp_points.svg&#34; alt=&#34;shellhist_gp_points.svg&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;binning-times&#34;&gt;Binning times&lt;/h2&gt;
+&lt;p&gt;The above chart gives a rough idea of when I was executing commands, but it&amp;rsquo;d be interesting to get more specific and quantify how many commands I was running per hour or minute. To do that we need to put entries in bins, mapping the command timestamps to intervals of the desired length. If we&amp;rsquo;re glancing at the manual we might think that the &lt;code&gt;histograms&lt;/code&gt; plotting style does what we want, but it doesn&amp;rsquo;t: it expects data to already be binned. We need to bin the data some other way; we could use a different tool or programming language, or we can use the &lt;code&gt;smooth frequency&lt;/code&gt; modifier for gnuplot&amp;rsquo;s &lt;code&gt;using&lt;/code&gt; clause, which adds ups the y-values for each unique x-value encountered.&lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt; So if we can get the time values as &lt;a href=&#34;https://en.wikipedia.org/wiki/Unix_time&#34;&gt;epoch seconds&lt;/a&gt;, round them to the start of the interval&lt;sup id=&#34;fnref:3&#34;&gt;&lt;a href=&#34;#fn:3&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;3&lt;/a&gt;&lt;/sup&gt; they&amp;rsquo;re in, and set the y-values as &lt;code&gt;1.0&lt;/code&gt;, then &lt;code&gt;smooth frequency&lt;/code&gt; will add up those ones, creating the needed mapping of interval start times to number of commands executed.&lt;/p&gt;
+&lt;p&gt;gnuplot represents times as epoch seconds&lt;sup id=&#34;fnref:4&#34;&gt;&lt;a href=&#34;#fn:4&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;4&lt;/a&gt;&lt;/sup&gt; and since we&amp;rsquo;ve set &lt;code&gt;timefmt&lt;/code&gt; and &lt;code&gt;xdata time&lt;/code&gt; we might expect that referencing column 2 in the expression for the x-values would evaluate to epoch seconds, but it actually follows the usual behaviour and evaluates to the first number present in the field, 2017 in our case. We&amp;rsquo;ve specified that xdata is time-based, not that column 2 is only to be interpreted as a time.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# WRONG. $2 evaluates to 2017, not epoch seconds.
+set xdata time
+set timefmt &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;
+binwidth = 3600
+plot &#39;shellhist&#39; using ($2 - ($2 % binwidth)):(1.0) with impulses
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Instead we use the &lt;code&gt;timecolumn&lt;/code&gt; function to get epoch seconds as a float. Most of the time we can rely on type coercion but to use the modulus (&lt;code&gt;%&lt;/code&gt;) operator &lt;code&gt;t&lt;/code&gt; needs to be converted to an int. Since &lt;code&gt;timecolumn&lt;/code&gt; takes a format there&amp;rsquo;s no need to set &lt;code&gt;timefmt&lt;/code&gt; anymore. Also, we can avoid parsing the date twice and make the script more readable by defining a user-defined function we&amp;rsquo;ll call &lt;code&gt;bin&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;shellhist_gp_line.gp&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;set xdata time
+
+binwidth = 3600 # 1h in seconds
+bin(t) = (t - (int(t) % binwidth))
+
+plot &#39;shellhist&#39; using (bin(timecolumn(2, &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;))):(1.0) \
+    smooth freq with linespoints
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_gp_line.svg&#34; alt=&#34;shellhist_gp_line.svg&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;discontinuities&#34;&gt;Discontinuities&lt;/h2&gt;
+&lt;p&gt;If we look closely at the chart above there&amp;rsquo;s a discontinuity on June 28, from 1 to ~30. This is due to multiline commands in my shell history: lines after the first don&amp;rsquo;t match the column specification given in the &lt;code&gt;using&lt;/code&gt; clause and column 1 for these lines ends up being interpreted as &lt;code&gt;NaN&lt;/code&gt;, resulting in a discontinuity in the data and multiple points being drawn for the same time interval. Instead of filtering the data with a separate script it was easier to ignore these lines using &lt;code&gt;set datafile missing NaN&lt;/code&gt;. Sometimes discontinuities are easier to notice when plotted with the &lt;code&gt;boxes&lt;/code&gt; plot style, where they show up as multiple lines within a box.&lt;/p&gt;
+&lt;h2 id=&#34;improve-readability&#34;&gt;Improve readability&lt;/h2&gt;
+&lt;p&gt;If we wanted to share this chart there&amp;rsquo;s a number of other worthwhile improvements:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Add a title.&lt;/li&gt;
+&lt;li&gt;Hide the legend (&amp;ldquo;key&amp;rdquo; in gnuplot parlance), which is more distracting than useful in this case.&lt;/li&gt;
+&lt;li&gt;Include time of day in the x-axis labels.&lt;/li&gt;
+&lt;li&gt;Remove extraneous xtics, ytics, and border lines, depending on our preference.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Histograms are commonly plotted using boxes, which is particularly nice when the boxes cover the x-axis intervals they represent. By default boxes are centered on their x-value, so we need to change the &lt;code&gt;bin&lt;/code&gt; function to offset them slightly. Also, we&amp;rsquo;ll need to set &lt;code&gt;boxwidth&lt;/code&gt;, since by default adjacent boxes are extended until they touch.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;shellhist_gp_bars.gp&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;binwidth = 3600 # 1h in seconds
+bin(t) = (t - (int(t) % binwidth) + binwidth/2)
+
+set xdata time
+set datafile missing NaN
+
+set boxwidth binwidth
+
+set xtics format &amp;quot;%b %d %H:%M&amp;quot; time rotate
+set xtics nomirror
+set ytics nomirror
+set key off
+set border 1+2 # Set the bits for bottom and left borders.
+set title &#39;Commands Run Per Hour&#39;
+
+plot &#39;shellhist&#39; using (bin(timecolumn(2, &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;))):(1.0) \
+    smooth freq with boxes
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_gp_bars.svg&#34; alt=&#34;shellhist_gp_bars.svg&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;multiple-distributions-with-lines&#34;&gt;Multiple distributions with lines&lt;/h2&gt;
+&lt;p&gt;Plotting multiple distributions with lines is only slightly trickier. For this data plotting all possible series would clutter the chart severely, so we instead find the most frequent commands using gnuplot&amp;rsquo;s &lt;code&gt;system&lt;/code&gt; function and a pipeline and only plot those. Then we use the &lt;code&gt;plot&lt;/code&gt; command&amp;rsquo;s &lt;code&gt;for&lt;/code&gt; clause to iterate over the data for each of the top commands, binning each separately by using ternary operator in the using clause to count one command per iteration.&lt;/p&gt;
+&lt;p&gt;If a line is missing columns then &lt;code&gt;stringcolumn(3)&lt;/code&gt; will evaluate to &lt;code&gt;NaN&lt;/code&gt; and a type error will be thrown when comparing it as a string to &lt;code&gt;cmd&lt;/code&gt;. To avoid this we can clean up the file or use &lt;code&gt;valid&lt;/code&gt; to check that a line has usable fields. &lt;code&gt;valid&lt;/code&gt; only checks that columns aren&amp;rsquo;t &lt;code&gt;NaN&lt;/code&gt;, though, so we can&amp;rsquo;t use it on string columns, as I was initially tempted to. &lt;code&gt;valid(3)&lt;/code&gt; is always false since a string that don&amp;rsquo;t contain numbers converts to &lt;code&gt;NaN&lt;/code&gt; when coerced to a float.&lt;/p&gt;
+&lt;p&gt;While I don&amp;rsquo;t want to plot all the series for the sake of readability, I would like to know how many command executions aren&amp;rsquo;t covered by the top few, so I&amp;rsquo;ve also plotted a line showing the overal number of commands run per hour. As shown in the last line of the example the previous datafile given to a &lt;code&gt;plot&lt;/code&gt; command can be reused by specifying the empty string (&lt;code&gt;&#39;&#39;&lt;/code&gt;),&lt;/p&gt;
+&lt;p&gt;Most gnuplot command names and modifiers can be abbreviated as long as they&amp;rsquo;re unambiguous, and I&amp;rsquo;ve taken advantage of this by writing &lt;code&gt;u&lt;/code&gt; instead of &lt;code&gt;using&lt;/code&gt; for the first &lt;code&gt;plot&lt;/code&gt; clause to help reduce the line length. Abbreviations are regularly used in examples I&amp;rsquo;ve seen on the web.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;shellhist_gp_stackedlines.gp&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;fmt = &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;
+
+binwidth = 3600 # 1h in seconds
+bin(t) = (t - (int(t) % binwidth) + binwidth/2)
+
+set xdata time
+set datafile missing NaN
+
+set xtics format &amp;quot;%b %d %H:%M&amp;quot; time rotate nomirror
+set ytics nomirror
+set border 1+2 # Set the bits for bottom and left borders.
+set title &#39;Commands Run Per Hour&#39;
+
+
+top_cmds = system(&amp;quot;awk &#39;$3 ~ /^[a-zA-Z0-9_-]+$/{print $3}&#39; shellhist \
+    | sort | uniq -c | sort -rn | awk &#39;{print $2}&#39; | sed 10q&amp;quot;)
+
+plot for [cmd in top_cmds] &#39;shellhist&#39; \
+    u (bin(timecolumn(2, fmt))):((valid(1) &amp;amp;&amp;amp; strcol(3) eq cmd) ? 1 : NaN) \
+        smooth freq with lines title cmd, \
+    &#39;&#39; using (bin(timecolumn(2, fmt))):(1.0) \
+        smooth freq with lines title &amp;quot;sum&amp;quot; dashtype &#39;..&#39;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_gp_stackedlines.svg&#34; alt=&#34;shellhist_gp_stackedlines.svg&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;multiple-distributions-with-stacked-bars&#34;&gt;Multiple distributions with stacked bars&lt;/h2&gt;
+&lt;p&gt;Plotting distributions using lines is convenient when making the chart, but if many distributions are involved the chart gets uncomfortably busy. Plotting the chart with stacked bars can make it easier to read.&lt;/p&gt;
+&lt;h3 id=&#34;inline-transformations&#34;&gt;Inline transformations&lt;/h3&gt;
+&lt;p&gt;Here we&amp;rsquo;re using a similar approach as for the previous chart, using gnuplot expressions to transform the data so it&amp;rsquo;s suitable for use with &lt;code&gt;smooth frequency&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The main complication is that we need to stack the bars ourselves, plotting sums of comamnd frequencies in descending order so taller bars don&amp;rsquo;t completely obscure the short ones. To acheive that we plot the sum of a decreasing number of commands using a &lt;code&gt;sum&lt;/code&gt;&lt;sup id=&#34;fnref:5&#34;&gt;&lt;a href=&#34;#fn:5&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;5&lt;/a&gt;&lt;/sup&gt; expression. Each box will obscure just the bottom of the previous one, with the unobscured portion&amp;mdash;that is, the difference between the sums&amp;mdash;representing the frequency of the command.&lt;/p&gt;
+&lt;p&gt;There are some minor changes, too, like the formatting options for the boxes, and setting the xtics to be &lt;code&gt;out&lt;/code&gt; so they aren&amp;rsquo;t obscured by the boxes. Also, since the series with the smallest overall frequencies are plotted first so they&amp;rsquo;re at the top of the stack, I&amp;rsquo;ve explicitly chosen which linetypes to use with &lt;code&gt;linetype cmd&lt;/code&gt; (&lt;code&gt;cmd&lt;/code&gt; being used as a linetype index) so the nicer colours at the start of the sequence are used for the biggest boxes.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;shellhist_gp_stackedbars.gp&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;binwidth = 3600 # 1h in seconds
+bin(t) = (t - (int(t) % binwidth) + binwidth/2)
+
+set xdata time
+set datafile missing NaN
+set boxwidth binwidth
+set xtics format &amp;quot;%b %d %H:%M&amp;quot; time rotate out nomirror
+set ytics nomirror
+set style fill solid border lc rgb &amp;quot;black&amp;quot;
+set border 3
+set title &amp;quot;Commands run per hour&amp;quot;
+
+top_cmds = system(&amp;quot;awk &#39;$3 ~ /^[a-zA-Z0-9_-]+$/{print $3}&#39; shellhist \
+    | sort | uniq -c | sort -rn | awk &#39;{print $2}&#39; | sed 10q&amp;quot;)
+
+time = &#39;(bin(timecolumn(2, &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;)))&#39;
+
+plot for [cmd=words(top_cmds):1:-1] &#39;shellhist&#39; \
+    u @time:(!valid(1) ? NaN : sum [i=1:cmd] strcol(3) eq word(top_cmds, i)) \
+    smooth freq w boxes t word(top_cmds, cmd) linetype cmd, \
+    &#39;&#39; u @time:(valid(1)) smooth freq w lines t &#39;sum&#39; dashtype &#39;..&#39;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_gp_stackedbars.svg&#34; alt=&#34;shellhist_gp_stackedbars.svg&#34;&gt;&lt;/p&gt;
+&lt;h3 id=&#34;external-reshaping&#34;&gt;External reshaping&lt;/h3&gt;
+&lt;p&gt;An alternative method is to reshape the data using some other tool so gnuplot&amp;rsquo;s histogram plot style can be used. For this data this approach is a lot more work than using inline transformations, but there are certainly situations where it&amp;rsquo;s appropriate.&lt;/p&gt;
+&lt;p&gt;We&amp;rsquo;re taking the data from this shape:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;time        cmd
+&amp;lt;timestamp&amp;gt; sed
+&amp;lt;timestamp&amp;gt; awk
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;to this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;time  sed awk
+&amp;lt;bin&amp;gt;   0   5
+&amp;lt;bin&amp;gt;   5   2
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I was almost able to reshape the data with &lt;a href=&#34;http://johnkerl.org/miller/doc/index.html&#34;&gt;&lt;code&gt;mlr&lt;/code&gt;&lt;/a&gt; but ended up using perl. It&amp;rsquo;s mostly a matter of counting frequencies per command for each bin, sorting the commands by frequency using a &lt;a href=&#34;https://en.wikipedia.org/wiki/Schwartzian_transform&#34;&gt;Schwartzian transform&lt;/a&gt; so it&amp;rsquo;s easy to print the top N commands, and then printing out all the bins. See the &lt;a href=&#34;#addendum-pandas&#34;&gt;addendum about pandas&lt;/a&gt; for a far more concise way to do this.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;bin.pl&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#!/usr/bin/perl
+
+use strict;
+use warnings FATAL =&amp;gt; &#39;all&#39;;
+
+use Time::Piece;
+use List::Util qw(sum0 min max);
+
+my $bin_width = 3600;
+
+my %bins;
+my %cmd_seen;
+for my $line (&amp;lt;&amp;gt;) {
+    my ($index, $time_str, $cmd) = split &#39; &#39;, $line;
+    next if $cmd !~ /^[a-zA-Z0-9_-]+$/;
+    my $time = Time::Piece-&amp;gt;strptime($time_str, &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;);
+    my $interval = $time-&amp;gt;epoch() - $time-&amp;gt;epoch() % $bin_width;
+    $bins{$interval}{$cmd}++;
+    $cmd_seen{$cmd}++;
+}
+
+my %total_for;
+for my $bin (values %bins) {
+    for my $cmd (keys %{$bin}) {
+        $total_for{$cmd} += $bin-&amp;gt;{$cmd};
+    }
+}
+my @cmds = map {$_-&amp;gt;[0]}
+           sort {$b-&amp;gt;[1] cmp $a-&amp;gt;[1]} # hi to lo
+           map {[$_, $total_for{$_}]}
+           keys %total_for;
+
+my $ofs = &#39; &#39;;
+print join($ofs, &#39;time&#39;, &#39;sum&#39;, @cmds), &amp;quot;\n&amp;quot;;
+
+my ($start, $end) = (min(keys %bins), max(keys %bins));
+for (my $interval = $start; $interval &amp;lt;= $end; $interval += $bin_width) {
+    my @row;
+    push @row, gmtime($interval)-&amp;gt;strftime(&amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;);
+    push @row, sum0(values %{$bins{$interval}});
+    for my $cmd (@cmds) {
+        push @row, $bins{$interval}{$cmd} // 0;
+    }
+    print join($ofs, @row), &amp;quot;\n&amp;quot;;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Producing data like:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ perl bin.pl shellhist | tee shellhist_binned
+time sum gnuplot fg qiv man go less perl vim echo dicedist cat history find printf ls sort wc meh cd nl tac mv rm sed ll uniq pf wget mkdir help reset seq for
+2017-06-27T20:00:00 10 0 0 0 5 0 0 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+2017-06-27T21:00:00 11 0 0 0 1 0 0 3 2 1 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+2017-06-27T22:00:00 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+2017-06-27T23:00:00 2 0 0 0 0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+2017-06-28T00:00:00 10 7 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 1 0 0 0 0
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now the &lt;code&gt;histogram&lt;/code&gt; plot type can be used. First off, we&amp;rsquo;ll &lt;code&gt;set style histogram rowstacked&lt;/code&gt; to get stacked bars instead of the default clustered bars, which don&amp;rsquo;t work well with a large number of bins like we have here.&lt;/p&gt;
+&lt;p&gt;The x-axis labels require a different approach from before. Lines of histogram data are implicitly plotted at x = 1, 2, 3, etc., so &lt;code&gt;set xdata time&lt;/code&gt; isn&amp;rsquo;t applicable and the data needs to contain all the bins we want plotted, including empty ones. If the times in the datafile aren&amp;rsquo;t in the presentation format desired, the x-axis tick labels can be formatted by giving an &lt;code&gt;xticlabels()&lt;/code&gt; specification in the &lt;code&gt;using&lt;/code&gt; clause and parsing and reformatting the dates using the &lt;code&gt;strptime&lt;/code&gt; and &lt;code&gt;strftime&lt;/code&gt; functions. Since the x-axis range doesn&amp;rsquo;t represent times we need to use &lt;code&gt;xticlabels()&lt;/code&gt; to get useful labels from the data itself. Unfortunately, this means there won&amp;rsquo;t be automatically-spaced major ticks, which are required for the automatic placement of minor ticks, and placing minor ticks manually is tricky. They can be placed using:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;set for x[&amp;lt;start&amp;gt;:&amp;lt;end&amp;gt;:&amp;lt;incr&amp;gt;] xtics add (&#39;&#39; x 1)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;but if an increment greater than 1 is used care must be taken to set the start so the minor ticks are aligned with the major ones, unless the data happens to start at a bin that&amp;rsquo;s a multiple of the increment. For example, if we&amp;rsquo;re using hour-long bins, major ticks are at midnight and noon, the first line of data (x=0) is for 8 o&amp;rsquo;clock, and we want a minor tick every 3 hours, we need to start the minor ticks at x=1&amp;mdash;9 o&amp;rsquo;clock&amp;mdash;instead, not at x=0, and calculating this programmatically is awkward. Alternatively, we can fake minor ticks by placing major ticks without labels, giving the empty string to &lt;code&gt;xticlabels()&lt;/code&gt; at appropriate positions.&lt;/p&gt;
+&lt;p&gt;The second plot clause prints the overall command frequency stored in the &lt;code&gt;sum&lt;/code&gt; column and takes care of the xticlabels. Since the rest of the columns are command frequencies sorted in decreasing order we can easily plot the top N commands by changing the iteration conditions of the first clause.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;shellhist_gp_histogram.gp&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# Autotitle series in the key using columnheaders from the data file.
+set key autotitle columnheader
+
+set style histogram rowstacked
+set style fill solid border lc rgb &amp;quot;black&amp;quot;
+
+set xtics nomirror rotate out
+
+set title &amp;quot;Commands run per hour&amp;quot;
+
+xlabel(time) = ( \
+    t = strptime(&amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;, time), \
+    int(tm_hour(t)) % 12 == 0  ? strftime(&amp;quot;%b %d %H:00&amp;quot;, t) \
+    : int(tm_hour(t)) % 3 == 0 ? &#39;&#39; \
+    :                            NaN \
+)
+
+topN = 10
+plot for [i=3:(3+topN-1)] &#39;shellhist_binned&#39; using i with histogram, \
+    &#39;&#39; u &amp;quot;sum&amp;quot;:xtic(xlabel(strcol(1))) w lines dashtype &#39;..&#39;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_gp_histogram.svg&#34; alt=&#34;shellhist_gp_histogram.svg&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;matplotlib&#34;&gt;matplotlib&lt;/h1&gt;
+&lt;h2 id=&#34;dates-times-and-timezones&#34;&gt;Dates, times, and timezones&lt;/h2&gt;
+&lt;p&gt;matplotlib includes some convenient date-handling code, particularly for locating and formatting axis ticks, but if we want to take advantage of this we need to give matplotlib our dates in its own format, a float representing the number of days since 0001-01-01 in UTC. Because the format is in UTC and timezone-naïve &lt;a href=&#34;https://docs.python.org/3.7/library/datetime.html#datetime-objects&#34;&gt;&lt;code&gt;datetime.datetime&lt;/code&gt;&lt;/a&gt; assume the local timezone, any &lt;code&gt;datetime.datetime&lt;/code&gt; objects converted using &lt;code&gt;matplotlib.dates.date2num&lt;/code&gt; must be either timezone-aware or in UTC themselves.&lt;/p&gt;
+&lt;p&gt;The standard &lt;code&gt;datetime&lt;/code&gt; module provides the &lt;a href=&#34;https://docs.python.org/3.7/library/datetime.html#datetime.tzinfo%60&#34;&gt;&lt;code&gt;tzinfo&lt;/code&gt;&lt;/a&gt; interface to add timezone information to &lt;code&gt;datetime.datetime&lt;/code&gt; instances, but only provides a concrete implementation for simple timezone offsets that don&amp;rsquo;t take DST or other changes into account. Also, &lt;code&gt;datetime.datetime.strptime&lt;/code&gt; can only parse timezone offsets formatted as &lt;code&gt;[-+]HHMM&lt;/code&gt;. For other cases additional libraries will likely be needed. In particluar, if timezone abbreviations are being parsed other libraries like &lt;code&gt;dateutil&lt;/code&gt;, a dependency of matplotlib, can be used to help disambiguate them, seeing as there are &lt;a href=&#34;https://www.timeanddate.com/time/zones/&#34;&gt;many collisions&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Also, unless we want to display UTC times in our charts we need to give a timezone to matplotlib to use for formatting. We can change matplotlib&amp;rsquo;s runtime configuration setting by giving an &lt;a href=&#34;https://en.wikipedia.org/wiki/Zoneinfo&#34;&gt;Olson&lt;/a&gt; timezone name in our &lt;a href=&#34;http://matplotlib.org/users/customizing.html&#34;&gt;&lt;code&gt;matplotlibrc&lt;/code&gt;&lt;/a&gt; file, or we can override the rc value in code by using &lt;code&gt;matplotlib.rcParams&lt;/code&gt; or by passing an object that implements the &lt;a href=&#34;https://docs.python.org/3.6/library/datetime.html#tzinfo-objects&#34;&gt;&lt;code&gt;datetime.tzinfo&lt;/code&gt;&lt;/a&gt; interface to all our &lt;a href=&#34;http://matplotlib.org/api/ticker_api.html#matplotlib.ticker.Locator&#34;&gt;&lt;code&gt;Locator&lt;/code&gt;&lt;/a&gt; and &lt;a href=&#34;http://matplotlib.org/api/ticker_api.html#matplotlib.ticker.Formatter&#34;&gt;&lt;code&gt;Formatter&lt;/code&gt;&lt;/a&gt; objects.&lt;sup id=&#34;fnref:6&#34;&gt;&lt;a href=&#34;#fn:6&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;6&lt;/a&gt;&lt;/sup&gt;  I&amp;rsquo;d rather not override anyone&amp;rsquo;s settings, so I&amp;rsquo;ve just set &lt;code&gt;timezone: America/Edmonton&lt;/code&gt; in my &lt;code&gt;~/.config/matplotlib/matplotlibrc&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;points&#34;&gt;Points&lt;/h2&gt;
+&lt;p&gt;Let&amp;rsquo;s start with the same type of chart as with gnuplot, a point for each command executed, randomly-scattered from [0,1] across the y-axis. This gives a rough idea of when commands were executed. Getting the data out of the &lt;code&gt;shellhist&lt;/code&gt; file is straight-forward but verbose compared to gnuplot, and numpy is convenient for generating a large array of random y-values. Note I&amp;rsquo;ve been careful to convert the &lt;code&gt;datetime.datetime&lt;/code&gt; objects resulting from parsing times to Unix time in UTC before converting them to matplotlib&amp;rsquo;s time representation.&lt;sup id=&#34;fnref:7&#34;&gt;&lt;a href=&#34;#fn:7&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;7&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;shellhist_mpl_points.py&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;from datetime import datetime
+import matplotlib.pyplot as plt
+from matplotlib.dates import epoch2num
+import numpy as np
+
+times = []
+for line in open(&#39;shellhist&#39;):
+    fields  = line.split()
+    if len(fields) &amp;lt; 3:
+        continue
+    _, time_str, cmd = fields[:3]
+    unixtime = datetime.strptime(time_str, &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;).timestamp()
+    times.append(epoch2num(unixtime))
+
+fig, ax = plt.subplots()
+fig.autofmt_xdate() # Rotate and right-align xtic labels.
+
+ax.plot_date(times, np.random.rand(len(times)), &#39;+&#39;)
+
+plt.savefig(&#39;shellhist_mpl_points.svg&#39;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_mpl_points.svg&#34; alt=&#34;shellhist_mpl_points.svg&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;binning-times-1&#34;&gt;Binning times&lt;/h2&gt;
+&lt;p&gt;matplotlib doesn&amp;rsquo;t have anything like gnuplot&amp;rsquo;s &lt;code&gt;smooth frequency&lt;/code&gt; filter (AFAIK), making it less convenient to do a quick-and-dirty line chart. It seems necessary to preprocess the data before plotting it. I looked at using numpy&amp;rsquo;s &lt;code&gt;histogram&lt;/code&gt; function or &lt;code&gt;matplotlib.axes.Axes.hist&lt;/code&gt; but it seems easier to count the frequency per bin using a &lt;code&gt;defaultdict&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;For bin widths that evenly divide a day, timestamps are most easily binned when represented as Unix time since every day is defined to have exactly 86400 seconds &lt;a href=&#34;http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_16&#34;&gt;according to POSIX&lt;/a&gt; regardless of leap seconds and it&amp;rsquo;s easy to use the modulus operator, &lt;code&gt;%&lt;/code&gt;, on an integer to find the start of some number of seconds, minutes, or hours. Wheras rounding &lt;code&gt;datetime.datetime&lt;/code&gt; instances seems to require cascading through the different units, and rounding matplotlib&amp;rsquo;s days-since-0001-01-01 representation involves dealing with floats, which are tricky to compare or round reliably and thus a bad choice for dictionary keys.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;shellhist_mpl_binned_overall.py&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;from collections import defaultdict
+from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+from matplotlib.dates import epoch2num
+
+bin_width = timedelta(hours=1)
+
+freq_for = defaultdict(lambda: 0)
+for line in open(&#39;shellhist&#39;):
+    fields  = line.split()
+    if len(fields) &amp;lt; 3:
+        continue
+    _, time_str, cmd = fields[:3]
+    unixtime = datetime.strptime(time_str, &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;).timestamp()
+    bin_start = unixtime - unixtime % bin_width.seconds
+    freq_for[bin_start] += 1
+
+
+unixtimes = list(sorted(freq_for.keys()))
+times = [epoch2num(t) for t in unixtimes]
+freqs = [freq_for[bin] for bin in unixtimes]
+
+fig, ax = plt.subplots()
+fig.autofmt_xdate()
+
+ax.plot_date(times, freqs, linestyle=&#39;-&#39;)
+
+plt.savefig(&#39;shellhist_mpl_overall_line.svg&#39;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_mpl_overall_line.svg&#34; alt=&#34;shellhist_mpl_overall_line.svg&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;improve-readability-1&#34;&gt;Improve readability&lt;/h2&gt;
+&lt;p&gt;Assuming we liked how the gnuplot single-distribution line chart was styled, we can create a similar chart in matplotlib.&lt;/p&gt;
+&lt;p&gt;First, use &lt;code&gt;DateFormatter&lt;/code&gt; and &lt;code&gt;HourLocator&lt;/code&gt; objects instead of &lt;code&gt;Figure.autofmt_xdate&lt;/code&gt; to choose xtick placement and labels:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;format the xtick labels as &amp;ldquo;Jan DD HHHH&amp;rdquo; and only label midnight and noon&lt;/li&gt;
+&lt;li&gt;add minor xticks every 3 hours&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;We also:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;hide the top and right &amp;ldquo;spines&amp;rdquo;, as matplotlib calls the &lt;code&gt;Axes&lt;/code&gt; borders&lt;/li&gt;
+&lt;li&gt;rotate the xticklabels to vertical. It&amp;rsquo;s harder to read the label itself but clearer which point on the axis the label refers to.&lt;/li&gt;
+&lt;li&gt;add a title&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;shellhist_mpl_binned_overall_nicer.py&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;from collections import defaultdict
+from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+from matplotlib.dates import epoch2num, DateFormatter, HourLocator
+
+bin_width = timedelta(hours=1)
+
+freq_for = defaultdict(lambda: 0)
+for line in open(&#39;shellhist&#39;):
+    fields  = line.split()
+    if len(fields) &amp;lt; 3:
+        continue
+    _, time_str, cmd = fields[:3]
+    unixtime = datetime.strptime(time_str, &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;).timestamp()
+    bin_start = unixtime - unixtime % bin_width.seconds
+    freq_for[bin_start] += 1
+
+
+unixtimes = list(sorted(freq_for.keys()))
+times = [epoch2num(t) for t in unixtimes]
+freqs = [freq_for[bin] for bin in unixtimes]
+
+fig, ax = plt.subplots()
+
+plt.xticks(rotation=&#39;vertical&#39;)
+ax.spines[&#39;right&#39;].set_visible(False)
+ax.spines[&#39;top&#39;].set_visible(False)
+ax.xaxis.set_major_formatter(DateFormatter(&amp;quot;%b %d %H00&amp;quot;))
+ax.xaxis.set_major_locator(HourLocator(byhour=range(0, 24, 12)))
+ax.xaxis.set_minor_locator(HourLocator(byhour=range(0, 24, 3)))
+ax.set_title(&amp;quot;Commands Run Per Hour&amp;quot;)
+
+ax.plot_date(times, freqs, linestyle=&#39;-&#39;)
+
+plt.savefig(&#39;shellhist_mpl_overall_line_nicer.svg&#39;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_mpl_overall_line_nicer.svg&#34; alt=&#34;shellhist_mpl_overall_line_nicer.svg&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;multiple-distributions&#34;&gt;Multiple distributions&lt;/h2&gt;
+&lt;p&gt;In matplotlib we can work from the same binned data whether we&amp;rsquo;re plotting lines or bars so I&amp;rsquo;m generating both from the same script here. The script is pretty long so I&amp;rsquo;ve organized it into functions.&lt;/p&gt;
+&lt;p&gt;Binning is mostly the same as before, except we&amp;rsquo;re filtering out commands that don&amp;rsquo;t look like words using a regular expression and using nested &lt;code&gt;defaultdict&lt;/code&gt;s to also keep track of per-command frequency.&lt;/p&gt;
+&lt;p&gt;The styling code in &lt;code&gt;save_chart&lt;/code&gt; is almost the same as before, except &lt;code&gt;Axes.legend&lt;/code&gt; is called between plotting all the series and saving the figure, since it generates a legend based on the series that have already been plotted.&lt;/p&gt;
+&lt;p&gt;I&amp;rsquo;ve set the line/bar colours to be &lt;code&gt;tab10&lt;/code&gt; using &lt;code&gt;Axes.set_prop_cycle&lt;/code&gt; in &lt;code&gt;save_chart&lt;/code&gt; just to show one way to change to them. &lt;a href=&#34;http://matplotlib.org/examples/color/color_cycle_demo.html&#34;&gt;This example&lt;/a&gt; show some other ways. &lt;code&gt;tab10&lt;/code&gt; is the default colour cycle, so it&amp;rsquo;s not actually doing anything.&lt;/p&gt;
+&lt;p&gt;Plotting lines is straightforward, but plotting stacked bars requires a few extra steps. As with gnuplot we&amp;rsquo;ve offset the times by half a &lt;code&gt;bin_width&lt;/code&gt; and set the bar width so the bars cover the time interval on the x-axis they represent instead of being centered over it.  Also, we need to keep track of the where to plot the bottom of the bars and add the frequencies of each series to it; a numpy array is convenient and efficient for this since operations on an array apply to all of its elements.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;shellhist_mpl_multi.py&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;from collections import defaultdict, namedtuple
+from cycler import cycler
+from datetime import datetime, timedelta
+from matplotlib.dates import epoch2num, DateFormatter, HourLocator
+import matplotlib.pyplot as plt
+import numpy as np
+import re
+
+# cmds: list of command names in decreasing order
+# unix_times: bin start times
+# freqs_for: dict of command names to numpy arrays of bin frequencies
+# totals: numpy array of overall command frequencies for each bin
+# bin_width: bin width as datetime.timedelta
+CmdFreq = namedtuple(&#39;CmdFreq&#39;,
+    [&#39;cmds&#39;, &#39;unix_times&#39;, &#39;freqs_for&#39;, &#39;totals&#39;, &#39;bin_width&#39;])
+
+plt.rcParams[&#39;image.cmap&#39;] = &#39;tab10&#39;
+
+def save_chart(plot_func, data, filename):
+    fig, ax = plt.subplots()
+
+    plt.xticks(rotation=&#39;vertical&#39;)
+    ax.spines[&#39;right&#39;].set_visible(False)
+    ax.spines[&#39;top&#39;].set_visible(False)
+    ax.xaxis.set_major_formatter(DateFormatter(&amp;quot;%b %d %H00&amp;quot;))
+    ax.xaxis.set_major_locator(HourLocator(byhour=range(0, 24, 12)))
+    ax.xaxis.set_minor_locator(HourLocator(byhour=range(0, 24, 3)))
+    ax.set_prop_cycle(cycler(&#39;color&#39;, plt.get_cmap(&#39;tab10&#39;).colors))
+    ax.set_title(&amp;quot;Commands Run Per Hour&amp;quot;)
+
+    plot_func(ax, data)
+
+    ax.legend() # Called after all data has been plotted.
+
+    plt.savefig(filename)
+
+def plot_bars(axes, data):
+    bar_offset = data.bin_width.seconds/2
+    offset_times = [epoch2num(t + bar_offset) for t in data.unix_times]
+    bar_width = data.bin_width.seconds / 86400.0 # Fraction of a day.
+
+    axes.plot(offset_times, data.totals,
+        linestyle=&#39;--&#39;, linewidth=0.4, label=&#39;sum&#39;)
+
+    bottom = np.zeros(len(offset_times))
+    for cmd in data.cmds[:10]:
+        axes.bar(offset_times, data.freqs_for[cmd],
+            bottom=bottom, width=bar_width, label=cmd)
+        bottom += data.freqs_for[cmd]
+
+def plot_lines(axes, data):
+    float_times = [epoch2num(t) for t in data.unix_times]
+    axes.plot(float_times, data.totals,
+        linestyle=&#39;--&#39;, linewidth=0.4, label=&#39;sum&#39;)
+
+    for cmd in data.cmds[:10]:
+        axes.plot(float_times, data.freqs_for[cmd], label=cmd)
+
+
+def get_cmd_data(bin_width):
+    with open(&#39;shellhist&#39;) as shellhist:
+        bin_for, bin_total_for = bin_cmds(shellhist, bin_width)
+
+    cmds = cmds_in_decreasing_freq(bin_for)
+
+    unix_times = np.array(sorted(bin_for.keys()), int)
+
+    freqs_for = {}
+    for cmd in cmds:
+        freqs_for[cmd] = np.array([bin_for[t][cmd] for t in unix_times])
+
+    totals = np.array([bin_total_for[t] for t in unix_times])
+
+    return CmdFreq(cmds, unix_times, freqs_for, totals, bin_width)
+
+def bin_cmds(event_lines, bin_width):
+    bin_for = defaultdict(lambda: defaultdict(lambda: 0))
+    bin_total_for = defaultdict(lambda: 0)
+    for line in event_lines:
+        fields  = line.split()
+        if len(fields) &amp;lt; 3:
+            continue
+        _, time_str, cmd = fields[:3]
+
+        if not re.search(r&#39;^[a-zA-Z0-9_-]+$&#39;, cmd):
+            continue
+
+        date = datetime.strptime(time_str, &amp;quot;%Y-%m-%dT%H:%M:%S&amp;quot;)
+        unixtime = int(date.timestamp())
+        bin_start = unixtime - unixtime % bin_width.seconds
+
+        bin_for[bin_start][cmd] += 1
+        bin_total_for[bin_start] += 1
+
+    return bin_for, bin_total_for
+
+def cmds_in_decreasing_freq(bin_for):
+    freq_for = defaultdict(lambda: 0)
+    for bin_ in bin_for.values():
+        for cmd, freq in bin_.items():
+            freq_for[cmd] += freq
+    pairs = sorted(freq_for.items(), key=lambda pair: pair[1])
+    return list(reversed([p[0] for p in pairs]))
+
+if __name__ == &#39;__main__&#39;:
+    data = get_cmd_data(timedelta(hours=1))
+    save_chart(plot_bars, data, &#39;shellhist_mpl_stacked_bars.svg&#39;)
+    save_chart(plot_lines, data, &#39;shellhist_mpl_stacked_lines.svg&#39;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_mpl_stacked_bars.svg&#34; alt=&#34;shellhist_mpl_stacked_bars.svg&#34;&gt;
+&lt;img src=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_mpl_stacked_lines.svg&#34; alt=&#34;shellhist_mpl_stacked_lines.svg&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;best-resources-for-learning&#34;&gt;Best resources for learning&lt;/h1&gt;
+&lt;p&gt;For gnuplot I&amp;rsquo;d definitely recommend looking at &lt;a href=&#34;https://www.manning.com/books/gnuplot-in-action-second-edition&#34;&gt;Gnuplot in Action&lt;/a&gt;, which is an amazing tutorial that teaches all the basics and a bunch of practical tricks. If you don&amp;rsquo;t want to buy a book I&amp;rsquo;d recommend reading &lt;a href=&#34;http://gnuplot.info/docs_5.0/gnuplot.pdf&#34;&gt;the manual&lt;/a&gt;, skimming less relevant sections but paying particular attention to most of part 1 and the description of the &lt;code&gt;plot&lt;/code&gt; command in part 3. Once these fundamental topics are understood I think the rest can be looked up as needed. At first glance the manual doesn&amp;rsquo;t look like it&amp;rsquo;s organized for a linear read but I was well-served by that approach. The &lt;code&gt;help&lt;/code&gt; command seems to provide all the content in the manual but conveniently indexed by topic and command, and I wish that I realized how good it was earlier, as I&amp;rsquo;m finding it far more convenient than referring to the manual. Looking through the collection of &lt;a href=&#34;http://gnuplot.sourceforge.net/demo_5.0/&#34;&gt;demos&lt;/a&gt; may also be helpful.&lt;/p&gt;
+&lt;p&gt;I learned what I know about matplotlib by stumbling through the official docs, which was painful and inefficient. They&amp;rsquo;re clearly written and comprehensive but it was difficult to find what I needed to do practical things. I suspect having such comprehensive API docs creates a &lt;a href=&#34;https://www.jwz.org/doc/worse-is-better.html&#34;&gt;Worse is Better&lt;/a&gt; situation making the creation of tutorial-style documentation seem like a relatively low-value activity since all the needed information is already out there somewhere and duplicating it in a tutorial increases the maintenance burden. I&amp;rsquo;d recommend starting with &lt;a href=&#34;http://www.labri.fr/perso/nrougier/teaching/matplotlib/&#34;&gt;Nicolas Rougier&amp;rsquo;s tutorial&lt;/a&gt; over the ones on &lt;a href=&#34;http://matplotlib.org/users/tutorials.html&#34;&gt;matplotlib.org&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
+&lt;p&gt;I&amp;rsquo;m impressed with both tools; they both render beautiful charts. As I mentioned in the intro I&amp;rsquo;d lean towards gnuplot for simpler, quicker tasks since it so convenient and concise, and towards matplotlib for fancier stuff, since it seems like everything imaginable is customizable if you pound your head against the docs for a bit. When each chart is defined in a separate script gnuplot is kicky fast compared to matplotlib, I think largely due to the time it takes to import all the matplotlib libraries; it probably doesn&amp;rsquo;t matter but it still bolsters my warm feelings of convenience for gnuplot.&lt;/p&gt;
+&lt;h1 id=&#34;addendum-pandas&#34;&gt;Addendum: pandas&lt;/h1&gt;
+&lt;p&gt;&lt;a href=&#34;http://pandas.pydata.org/pandas-docs/stable/index.html&#34;&gt;pandas&lt;/a&gt; is a data analysis toolkit for Python and it has some particularly convienient functions for pivoting and rolling up the data. Assuming the times and commands have already been extracted from the datafile as equal-length lists of strings named &lt;code&gt;times&lt;/code&gt; and &lt;code&gt;cmds&lt;/code&gt;, the data can be binned and pivoted into a wide format like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import pandas as pd
+
+df = pd.DataFrame({&#39;cmd&#39;: cmds, &#39;freq&#39;: 1}, index=pd.DatetimeIndex(times))
+piv = df.pivot(columns=&#39;cmd&#39;, values=&#39;freq&#39;)
+binned = piv.resample(&#39;{}S&#39;.format(seconds)).sum().fillna(0)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;pandas provides a wrapper for matplotlib that works very well for simple cases but isn&amp;rsquo;t flexible enough to make a chart similar to the stacked-bar histograms above. Here&amp;rsquo;s a script where I use matplotlib directly instead: &lt;a href=&#34;http://torbiak.com/post/histogram_gnuplot_vs_matplotlib/shellhist_pandas.py&#34;&gt;shellhist_pandas.py&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;addendum-changelog&#34;&gt;Addendum: changelog&lt;/h1&gt;
+&lt;p&gt;&lt;strong&gt;2017-08-15&lt;/strong&gt;: Added an &lt;a href=&#34;#addendum-pandas&#34;&gt;addendum&lt;/a&gt; discussing the use of &lt;a href=&#34;http://pandas.pydata.org/pandas-docs/stable/index.html&#34;&gt;pandas&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;2017-10-09&lt;/strong&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Added a nice way to make a stacked bar chart for multiple distributions using gnuplot, after discovering the &lt;code&gt;sum [min:max:step] &amp;lt;expr&amp;gt;&lt;/code&gt; syntax.&lt;/li&gt;
+&lt;li&gt;Added &lt;code&gt;help&lt;/code&gt; commands to be entered at the gnuplot prompt for easier access to relevant documentation.&lt;/li&gt;
+&lt;li&gt;Added the excellent &lt;a href=&#34;https://www.manning.com/books/gnuplot-in-action-second-edition&#34;&gt;Gnuplot in Action&lt;/a&gt; as an important resource for learning gnuplot.&lt;/li&gt;
+&lt;li&gt;Removed discussion of colour in gnuplot as it&amp;rsquo;s mostly irrelevant to the task at hand and there&amp;rsquo;s several good ways to change colours that aren&amp;rsquo;t difficult to find. See &lt;code&gt;help colors&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Made the &amp;ldquo;sum&amp;rdquo; line more distinct by making it dotted.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;2017-10-11&lt;/strong&gt;: Previously I was using the term &amp;ldquo;time series&amp;rdquo; loosely to refer to timestamped data in general, but it usually refers to data that are equally spaced in time. &amp;ldquo;Event stream&amp;rdquo; is more applicable to the data used here.&lt;/p&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;A description of the &lt;code&gt;using&lt;/code&gt; clause of the plot command can be found by entering &lt;code&gt;help using&lt;/code&gt; at the gnuplot prompts or in the &amp;ldquo;Commands &amp;gt; Plot &amp;gt; Data &amp;gt; Using&amp;rdquo; section of &lt;a href=&#34;http://gnuplot.info/docs_5.0/gnuplot.pdf&#34;&gt;gnuplot&amp;rsquo;s manual&lt;/a&gt;. The manual is an excellent reference but isn&amp;rsquo;t obviously a tutorial, and before reading most of it I had trouble finding the information I needed. If it was published in HTML I&amp;rsquo;d link directly to relevant sections, but it&amp;rsquo;s only published in PDF so I&amp;rsquo;ve provided section breadcrumbs and &lt;code&gt;help&lt;/code&gt; command keywords.&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:2&#34;&gt;
+&lt;p&gt;&lt;code&gt;help smooth freq&lt;/code&gt; and the &amp;ldquo;Commands &amp;gt; Plot &amp;gt; Data &amp;gt; Smooth &amp;gt; Frequency&amp;rdquo; section of the gnuplot manual have an example of plotting a histogram with the &lt;code&gt;lines&lt;/code&gt; plotting style.&amp;#160;&lt;a href=&#34;#fnref:2&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:3&#34;&gt;
+&lt;p&gt;Note that one limitation of rounding the epoch seconds time representation like this is that leap seconds aren&amp;rsquo;t taken into account. If leap second accuracy is required for your application a different approach is needed.&amp;#160;&lt;a href=&#34;#fnref:3&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:4&#34;&gt;
+&lt;p&gt;See the &amp;ldquo;Gnuplot &amp;gt; Time/Date Data&amp;rdquo; section of the manual or &lt;code&gt;help time/date&lt;/code&gt;.&amp;#160;&lt;a href=&#34;#fnref:4&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:5&#34;&gt;
+&lt;p&gt;See the &amp;ldquo;Gnuplot &amp;gt; Expressions &amp;gt; Summation&amp;rdquo; section of the manual or &lt;code&gt;help sum&lt;/code&gt;.&amp;#160;&lt;a href=&#34;#fnref:5&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:6&#34;&gt;
+&lt;p&gt;&lt;code&gt;dateutil.tz.tzlocal&lt;/code&gt; returns a &lt;code&gt;datetime.tzinfo&lt;/code&gt;-conforming object for the local time zone.&amp;#160;&lt;a href=&#34;#fnref:6&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:7&#34;&gt;
+&lt;p&gt;Alternatively, it&amp;rsquo;s straightforward to stick with Unix times and use &lt;code&gt;matplotlib.dates.FuncFormatter&lt;/code&gt; and &lt;code&gt;MultipleLocator&lt;/code&gt; instead, but I&amp;rsquo;m trying to go with the grain of matplotlib.&amp;#160;&lt;a href=&#34;#fnref:7&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Absorb changes across a topic branch in git</title>
+      <link>http://torbiak.com/post/autofixup/</link>
+      <pubDate>Sun, 04 Jun 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://torbiak.com/post/autofixup/</guid>
+      <description>&lt;h1 id=&#34;motivation-tedious-fixups&#34;&gt;Motivation: tedious fixups&lt;/h1&gt;
+&lt;p&gt;Here&amp;rsquo;s the situation. I&amp;rsquo;m working on a feature and end up with a chain of commits that depend on each other. It&amp;rsquo;d be easier for me as the author to put all the work in a single commit, but I like telling stories with my commits to (hopefully) make reviewing the branch easier and the history more meaningful in general. Anyway, the review goes back and forth for a while, motivating a bunch of small edits that are logically most connected to various commits. I commit these edits separately and then squash/fixup them all with an interactive rebase. Now, assigning changes to commits representing logical groups of changes was fun/challenging the first time, but assigning these small edits born of review feedback is nearly a mechanical process of scanning through the list of topic branch commits and copy-pasting SHAs. [Or, more conveniently, using &lt;code&gt;git commit --fixup=:/&amp;lt;regex&amp;gt;&lt;/code&gt;, although I haven&amp;rsquo;t thought to do that until recently.]&lt;/p&gt;
+&lt;p&gt;Personal and team git workflows apparently vary wildly, so not everyone has dealt with this situation, but I&amp;rsquo;ve encountered it with enough regularity that when I read the description of Facebook&amp;rsquo;s &lt;a href=&#34;https://bitbucket.org/facebook/hg-experimental/src/abee33554ccf744c852b14876d1d2069e3fe22d2/hgext3rd/absorb/__init__.py?at=default&amp;amp;fileviewer=file-view-default&#34;&gt;&lt;code&gt;hg absorb&lt;/code&gt;&lt;/a&gt; command in these &lt;a href=&#34;https://groups.google.com/forum/#!topic/mozilla.dev.version-control/nh4fITFlEMk&#34;&gt;Mercurial sprint notes&lt;/a&gt; I was super envious. To cure my envy I wrote &lt;a href=&#34;https://github.com/torbiak/git-autofixup&#34;&gt;&lt;code&gt;git-autofixup&lt;/code&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;how-it-works&#34;&gt;How it works&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;git-autofixup&lt;/code&gt; parses hunks of changes in the working directory out of &lt;code&gt;git diff&lt;/code&gt; output and uses &lt;code&gt;git blame&lt;/code&gt; to assign those hunks to commits in &lt;code&gt;&amp;lt;revision&amp;gt;..HEAD&lt;/code&gt;, which will typically represent a topic branch, and then creates fixup commits to be used with &lt;code&gt;git rebase --interactive --autosquash&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;By default a hunk will be included in a fixup commit if the hunk&amp;rsquo;s context shows there&amp;rsquo;s an unambiguous target topic branch commit. There are two situations where a target commit is considered unambiguous:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;When it&amp;rsquo;s the only topic branch commit the hunk is near. More precisely, when it&amp;rsquo;s the only topic branch commit appearing in the blame output of all the hunk&amp;rsquo;s context lines.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;It&amp;rsquo;s blamed for all the lines that the hunk changed, even if changes from other topic branch commits are nearby. More precisely, it&amp;rsquo;s blamed for all the removed lines and at least one of the context lines adjacent to added lines, and no context lines adjacent to added lines are blamed on any other topic branch commits.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Slightly stricter assignment criteria are also available for when you&amp;rsquo;re untangling fixups from changes for a new commit: see the description of the &lt;code&gt;--strict&lt;/code&gt; option in the &lt;code&gt;--help&lt;/code&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;example&#34;&gt;Example&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;git-autofixup&lt;/code&gt; is most useful on big projects, in big teams, on long-lived topic branches, but I&amp;rsquo;ve tried to concoct a small example that motivates its use. Say we have a little python library that for whatever reason transforms a given name so the letters of the last word of the name alternate between upper and lower case:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;def last_name_alternating_case(name):
+    &amp;quot;&amp;quot;&amp;quot;Return name, but with the last word in aLtErNaTiNg case.&amp;quot;&amp;quot;&amp;quot;
+    words = name.split()
+    letters = list(words[-1])
+    for (i, char) in enumerate(letters):
+        if i % 2 == 0:
+            letters[i] = char.lower()
+        else:
+            letters[i] = char.upper()
+    words[-1] = &#39;&#39;.join(letters)
+    return &#39; &#39;.join(words)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A new function is required that alternates the case of the letters in every other word of a given string, so we start a topic branch and have it track &lt;code&gt;master&lt;/code&gt;. Before we start writing &lt;code&gt;odd_words_alternating_case&lt;/code&gt;, though, we realize some of the logic needed can be factored out of &lt;code&gt;last_name_alternating_case&lt;/code&gt;. So we do that and make a commit with the summary &lt;code&gt;Factor out alternating_case function&lt;/code&gt;. The file is now:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;def last_name_alternating_case(name):
+    &amp;quot;&amp;quot;&amp;quot;Return name, but with the last word in aLtErNaTiNg case.&amp;quot;&amp;quot;&amp;quot;
+    words = name.split()
+    words[-1] = alternating_case(words[-1])
+    return &#39; &#39;.join(words)
+
+def alternating_case(s):
+    letters = list(s)
+    for (i, char) in enumerate(letters):
+        if i % 2 == 0:
+            letters[i] = char.upper()
+        else:
+            letters[i] = char.lower()
+    return &#39;&#39;.join(letters)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now we&amp;rsquo;re ready to write &lt;code&gt;odd_words_alternating_case&lt;/code&gt; using &lt;code&gt;alternating_case&lt;/code&gt;, and commit it as &lt;code&gt;Add odd_words_alternating_case&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;def odd_words_alternating_case(s):
+    &amp;quot;&amp;quot;&amp;quot;Returns the string with alternating words in alternating case.&amp;quot;&amp;quot;&amp;quot;
+    words = s.split()
+    for (i, word) in enumerate(words):
+        if i % 2 == 0:
+            continue
+        words[i] = alternating_case(word)
+    return &#39; &#39;.join(words)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Looking the code over, we realize we want to give &lt;code&gt;alternating_case&lt;/code&gt; a docstring, change the tense/mood of the &lt;code&gt;odd_words_alternating_case&lt;/code&gt; docstring so it&amp;rsquo;s consistent with &lt;code&gt;last_name_alternating_case&lt;/code&gt;, and we decide the first character of alternating-case words should be uppercase. Here&amp;rsquo;s the diff of these unstaged changes:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;diff --git a/ex.py b/ex.py
+index 2ed7e63..2a5e73b 100644
+--- a/ex.py
++++ b/ex.py
+@@ -7,2 +7,3 @@ def last_name_alternating_case(name):
+ def alternating_case(s):
++    &amp;quot;&amp;quot;&amp;quot;Return s with its characters in aLtErNaTiNg case.&amp;quot;&amp;quot;&amp;quot;
+     letters = list(s)
+@@ -10,5 +11,5 @@ def alternating_case(s):
+         if i % 2 == 0:
+-            letters[i] = char.upper()
+-        else:
+             letters[i] = char.lower()
++        else:
++            letters[i] = char.upper()
+     return &#39;&#39;.join(letters)
+@@ -16,3 +17,3 @@ def alternating_case(s):
+ def odd_words_alternating_case(s):
+-    &amp;quot;&amp;quot;&amp;quot;Returns the string with alternating words in alternating case.&amp;quot;&amp;quot;&amp;quot;
++    &amp;quot;&amp;quot;&amp;quot;Return s with odd words in alternating case.&amp;quot;&amp;quot;&amp;quot;
+     words = s.split()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We&amp;rsquo;d like to squash these changes into the previous two commits. In this particular instance it&amp;rsquo;d be quite easy to do with two rounds of &lt;code&gt;git add --patch&lt;/code&gt; followed by &lt;code&gt;git commit --fixup=:/&amp;lt;regex&amp;gt;&lt;/code&gt;. but if the topic branch had more commits and we were fixing up more areas this process would get tedious. Let&amp;rsquo;s see what &lt;code&gt;git-autofixup&lt;/code&gt; does with it:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ git-autofixup -vv @{upstream}
+ex.py @@ -5,16 +5,17 @@ has multiple targets
+656a790f|   5|    return &#39; &#39;.join(words)    |     return &#39; &#39;.join(words)
+656a790f|   6|                              |
+656a790f|   7|def alternating_case(s):      | def alternating_case(s):
+        |    |                              |+    &amp;quot;&amp;quot;&amp;quot;Return s with its char
+656a790f|   8|    letters = list(s)         |     letters = list(s)
+^       |   9|    for (i, char) in enumerate|     for (i, char) in enumerat
+^       |  10|        if i % 2 == 0:        |         if i % 2 == 0:
+^       |  11|            letters[i] = char.|-            letters[i] = char
+656a790f|  12|        else:                 |-        else:
+656a790f|  13|            letters[i] = char.|             letters[i] = char
+        |    |                              |+        else:
+        |    |                              |+            letters[i] = char
+656a790f|  14|    return &#39;&#39;.join(letters)   |     return &#39;&#39;.join(letters)
+5be3a3b9|  15|                              |
+5be3a3b9|  16|def odd_words_alternating_case| def odd_words_alternating_cas
+5be3a3b9|  17|    &amp;quot;&amp;quot;&amp;quot;Returns the string with|-    &amp;quot;&amp;quot;&amp;quot;Returns the string wit
+        |    |                              |+    &amp;quot;&amp;quot;&amp;quot;Return s with odd word
+5be3a3b9|  18|    words = s.split()         |     words = s.split()
+5be3a3b9|  19|    for (i, word) in enumerate|     for (i, word) in enumerat
+5be3a3b9|  20|        if i % 2 == 0:        |         if i % 2 == 0:
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We&amp;rsquo;re using high verbosity (&lt;code&gt;-vv&lt;/code&gt;) so that the &amp;ldquo;blamediff&amp;rdquo; gets printed and we can see how the hunks are being handled. Our changes are close enough together that they all get put into the same hunk with the default number of diff context lines (3), and then that single hunk is related to both of our topic branch commits. When we reduce the number of context lines to get more hunks the unstaged changes are isolated enough to be assigned to their respective commits and two &lt;code&gt;fixup!&lt;/code&gt; commits are created:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ git-autofixup --context=1 -vv @{upstream}
+ex.py @@ -7,2 +7,3 @@ fixes 656a790f Factor out alternating_case function
+656a790f|   7|def alternating_case(s):      | def alternating_case(s):
+        |    |                              |+    &amp;quot;&amp;quot;&amp;quot;Return s with its char
+656a790f|   8|    letters = list(s)         |     letters = list(s)
+
+ex.py @@ -10,5 +11,5 @@ fixes 656a790f Factor out alternating_case function
+^       |  10|        if i % 2 == 0:        |         if i % 2 == 0:
+^       |  11|            letters[i] = char.|-            letters[i] = char
+656a790f|  12|        else:                 |-        else:
+656a790f|  13|            letters[i] = char.|             letters[i] = char
+        |    |                              |+        else:
+        |    |                              |+            letters[i] = char
+656a790f|  14|    return &#39;&#39;.join(letters)   |     return &#39;&#39;.join(letters)
+
+ex.py @@ -16,3 +17,3 @@ fixes 5be3a3b9 Add odd_word_alternating_case function
+5be3a3b9|  16|def odd_words_alternating_case| def odd_words_alternating_cas
+5be3a3b9|  17|    &amp;quot;&amp;quot;&amp;quot;Returns the string with|-    &amp;quot;&amp;quot;&amp;quot;Returns the string wit
+        |    |                              |+    &amp;quot;&amp;quot;&amp;quot;Return s with odd word
+5be3a3b9|  18|    words = s.split()         |     words = s.split()
+
+[topic 44cadf7] fixup! Add odd_word_alternating_case function
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+[topic bde4ca5] fixup! Factor out alternating_case function
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, we do a &lt;code&gt;git rebase --interactive --autosquash&lt;/code&gt; and see git has set the fixup commits to be squashed into their targets:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pick 656a790 Factor out alternating_case function
+fixup cfa466e fixup! Factor out alternating_case function
+pick 5be3a3b Add odd_word_alternating_case function
+fixup 1a6c084 fixup! Add odd_word_alternating_case function
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;where-to-get-it&#34;&gt;Where to get it&lt;/h1&gt;
+&lt;p&gt;Check it out on &lt;a href=&#34;https://github.com/torbiak/git-autofixup&#34;&gt;GitHub&lt;/a&gt; or the &lt;a href=&#34;https://metacpan.org/pod/distribution/App-Git-Autofixup/git-autofixup&#34;&gt;CPAN&lt;/a&gt;. It can be installed using a CPAN client or by simply downloading the self-contained script, &lt;a href=&#34;https://raw.githubusercontent.com/torbiak/git-autofixup/master/git-autofixup&#34;&gt;&lt;code&gt;git-autofixup&lt;/code&gt;&lt;/a&gt;, to a directory in &lt;code&gt;PATH&lt;/code&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Finding find: grasping its simple expression language</title>
+      <link>http://torbiak.com/post/finding_find/</link>
+      <pubDate>Wed, 08 Mar 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://torbiak.com/post/finding_find/</guid>
+      <description>&lt;h1 id=&#34;confusion&#34;&gt;Confusion&lt;/h1&gt;
+&lt;p&gt;I remember the first time I tried to use the &lt;code&gt;find&lt;/code&gt; command on Linux, over a decade ago. I knew a substring of the name of a file I wanted to find, had found something on the web suggesting I use &lt;code&gt;find&lt;/code&gt;, and was so disappointed when I couldn&amp;rsquo;t just run &lt;code&gt;find $SUBSTR&lt;/code&gt; to get my desired result. &amp;ldquo;Surely such a command exists,&amp;rdquo; I thought. And it basically does, with &lt;code&gt;locate&lt;/code&gt;, but I was searching directories that hadn&amp;rsquo;t been indexed by &lt;code&gt;updatedb&lt;/code&gt; and didn&amp;rsquo;t know enough about globbing and quoting in &lt;code&gt;bash&lt;/code&gt; to effectively give patterns to it. So I did some more searching on the web, learned I needed to give a &lt;code&gt;-name&lt;/code&gt; predicate to &lt;code&gt;find&lt;/code&gt;, and typed a lot of commands like the following over the next few years:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;find . -name &amp;quot;*$SUBSTR*&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;[Here I&amp;rsquo;m using &amp;ldquo;predicate&amp;rdquo; to mean a term of an expression. It&amp;rsquo;s the word the GNU manpage uses.]&lt;/p&gt;
+&lt;p&gt;Much later, after reading the bash manpage a few times, among other things, I wrote a shell function to make this specific task a bit shorter to type, giving me the command I had wished for years before:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# find files under current directory containing a pattern
+function ff {
+    pattern=${1:?No pattern given}; shift
+    find . -iname &amp;quot;*${pattern}*&amp;quot; &amp;quot;$@&amp;quot; 2&amp;gt;/dev/null
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;beyond-names&#34;&gt;Beyond names&lt;/h1&gt;
+&lt;p&gt;Eventually I needed to find files based on their modification times and I started using the &lt;code&gt;-mtime&lt;/code&gt; predicate. For example, to find files modified within the past 24 hours (&lt;code&gt;-mtime&lt;/code&gt; takes units of 24 hours):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;find . -mtime -1
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;When using a condition like this that can match large numbers of uninteresting files it becomes obvious that further filtering is necessary. &lt;code&gt;egrep -v&lt;/code&gt; can be used for this, but to avoid needlessly traversing directories and wasting time, using the &lt;code&gt;-prune&lt;/code&gt; predicate for &lt;code&gt;find&lt;/code&gt; is desirable. It was difficult to use properly without understanding find&amp;rsquo;s little expression language, though.&lt;/p&gt;
+&lt;h1 id=&#34;essence-of-expressions&#34;&gt;Essence of expressions&lt;/h1&gt;
+&lt;p&gt;The &lt;code&gt;DESCRIPTION&lt;/code&gt; in the manpage for GNU &lt;code&gt;find&lt;/code&gt; makes sense now but it meant nothing to me in 2005. &amp;ldquo;&amp;hellip;evaluating the given expression from left to right, according to the rules of precedence, until the outcome is known, at which point &lt;code&gt;find&lt;/code&gt; moves on to the next file name.&amp;rdquo; All it means, though, is that you give &lt;code&gt;find&lt;/code&gt; a boolean expression composed of predicates and operators, and each file will get tested against it. Each predicate evaluates to true or false, and they are combined with the AND (&lt;code&gt;-a&lt;/code&gt;) and OR (&lt;code&gt;-o&lt;/code&gt;) operators. I don&amp;rsquo;t remember how I came to understand this, but the best explanation I&amp;rsquo;ve seen is in chapter 9 of &lt;a href=&#34;http://shop.oreilly.com/product/9780596003302.do&#34;&gt;Unix Power Tools&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;A few pages down in the manpage, in the &lt;code&gt;EXPRESSION&lt;/code&gt; section, we see there are several classes of predicates: tests, actions, options, and operators. &lt;code&gt;-mtime&lt;/code&gt; and &lt;code&gt;-name&lt;/code&gt; are examples of tests, &lt;code&gt;-print&lt;/code&gt; is the default action, &lt;code&gt;-maxdepth&lt;/code&gt; is an example of an option, and &lt;code&gt;-a&lt;/code&gt; (AND) is the default operator. It might seem weird to include actions and options in a boolean expression of tests, and it is, but it works well. They can be shoehorned in with the tests because they also return boolean values: most &lt;em&gt;actions&lt;/em&gt; always return true, and &lt;em&gt;options&lt;/em&gt; always return true. &lt;code&gt;-print&lt;/code&gt;, the most commonly used action, always returns true.&lt;/p&gt;
+&lt;p&gt;After grasping this key point, that &lt;code&gt;find&lt;/code&gt; is just evaluating a boolean expression, it&amp;rsquo;s easy to write elaborate commands. Starting with something simple, though:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ ls
+bar  foo
+$ find . -name foo -a -print
+./foo
+
+# Using defaults to save typing:
+$ find . -name foo
+./foo
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This expression and its evaluation can be represented in a C-inspired syntax:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Testing &amp;quot;bar&amp;quot;:
+name == &amp;quot;foo&amp;quot; &amp;amp;&amp;amp; print
+false &amp;amp;&amp;amp; print
+false
+continue to the next file
+
+Testing &amp;quot;foo&amp;quot;:
+name == &amp;quot;foo&amp;quot; &amp;amp;&amp;amp; print
+true &amp;amp;&amp;amp; print
+print
+true
+continue to the next file
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;find&lt;/code&gt; reads the current directory, gets &lt;code&gt;bar&lt;/code&gt;, tests it against &lt;code&gt;-name foo&lt;/code&gt;, which evaluates to false, and short-circuits on the &lt;code&gt;-a&lt;/code&gt; operator, continuing on to &lt;code&gt;foo&lt;/code&gt;, which tests true with &lt;code&gt;-name foo&lt;/code&gt; and so gets printed by &lt;code&gt;-print&lt;/code&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;prune&#34;&gt;Prune&lt;/h1&gt;
+&lt;p&gt;Back to &lt;code&gt;-prune&lt;/code&gt;. We&amp;rsquo;re still searching for &lt;code&gt;foo&lt;/code&gt;, but let&amp;rsquo;s say there&amp;rsquo;s also a directory we don&amp;rsquo;t want to descend into called &lt;code&gt;cache&lt;/code&gt;. There&amp;rsquo;s a file called &lt;code&gt;foo&lt;/code&gt; in it so it&amp;rsquo;s easier to tell if it&amp;rsquo;s getting searched.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# List files (-type f) under the working directory.
+$ find . -type f
+./cache/foo
+./bar
+./foo
+
+$ find . -name cache -prune -o -name foo -print
+./foo
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Here&amp;rsquo;s the expression in C-inspired syntax:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Testing &amp;quot;cache&amp;quot;:
+(name == &amp;quot;cache&amp;quot; &amp;amp;&amp;amp; prune) || (name == &amp;quot;foo&amp;quot; &amp;amp;&amp;amp; print)
+(true &amp;amp;&amp;amp; prune) || (name == &amp;quot;foo&amp;quot; &amp;amp;&amp;amp; print)
+prune || (name == &amp;quot;foo&amp;quot; &amp;amp;&amp;amp; print)
+true || (name == &amp;quot;foo&amp;quot; &amp;amp;&amp;amp; print)
+true
+continue to the next file
+
+Testing &amp;quot;foo&amp;quot;:
+(name == &amp;quot;cache&amp;quot; &amp;amp;&amp;amp; prune) || (name == &amp;quot;foo&amp;quot; &amp;amp;&amp;amp; print)
+(false &amp;amp;&amp;amp; prune) || (name == &amp;quot;foo&amp;quot; &amp;amp;&amp;amp; print)
+name == &amp;quot;foo&amp;quot; &amp;amp;&amp;amp; print
+true &amp;amp;&amp;amp; print
+print
+true
+continue to the next file
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Let&amp;rsquo;s run through this. When &lt;code&gt;find&lt;/code&gt; is testing &lt;code&gt;cache&lt;/code&gt;, &lt;code&gt;-name cache&lt;/code&gt; returns true, so &lt;code&gt;-prune&lt;/code&gt; gets run, which removes &lt;code&gt;cache&lt;/code&gt; from the list of directories to descend into and returns true. The return value of the whole expression is then known because the left side of the OR (&lt;code&gt;-o&lt;/code&gt;) is true, so &lt;code&gt;find&lt;/code&gt; moves onto the next file. When testing &lt;code&gt;foo&lt;/code&gt;, &lt;code&gt;-name cache&lt;/code&gt; returns false, failing the left side of the OR, so &lt;code&gt;find&lt;/code&gt; moves to the right side where &lt;code&gt;-name foo&lt;/code&gt; returns true, resulting in &lt;code&gt;./foo&lt;/code&gt; being printed.&lt;/p&gt;
+&lt;h1 id=&#34;default-action&#34;&gt;Default action&lt;/h1&gt;
+&lt;p&gt;If an expression doesn&amp;rsquo;t print or execute anything &lt;code&gt;find&lt;/code&gt; treats it as if it were surrounded in parentheses and followed by a print action: &lt;code&gt;( EXPR ) -print&lt;/code&gt;. For example, if we remove &lt;code&gt;-print&lt;/code&gt; from the previous command:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ find . -name cache -prune -o -name foo
+./cache
+./foo
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;cache&lt;/code&gt; gets printed because &lt;code&gt;-prune&lt;/code&gt; returns true, making the overall expression true for it.&lt;/p&gt;
+&lt;h1 id=&#34;parens&#34;&gt;Parens&lt;/h1&gt;
+&lt;p&gt;As with many expression languages, parentheses can be used to force precedence. They need to be escaped or quoted so the shell doesn&amp;rsquo;t treat them specially:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ find . -name cache -prune -o \( -name foo -o -name bar \) -print
+./bar
+./foo
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;troubleshooting&#34;&gt;Troubleshooting&lt;/h1&gt;
+&lt;p&gt;If an expression isn&amp;rsquo;t behaving as expected &lt;code&gt;-exec&lt;/code&gt; or &lt;code&gt;-printf&lt;/code&gt; can be used to visualize what&amp;rsquo;s actually happening. If portability is important, note that &lt;code&gt;-printf&lt;/code&gt; is a GNU extension and isn&amp;rsquo;t specified in &lt;a href=&#34;http://pubs.opengroup.org/onlinepubs/9699919799/utilities/find.html&#34;&gt;POSIX&lt;/a&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ find . -name cache -printf &amp;quot;pruning %p\n&amp;quot; -prune -o -name foo -print
+pruning ./cache
+./foo
+
+$ find . -name cache -exec echo pruning {} \; -prune -o -name foo -print
+pruning ./cache
+./foo
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&#34;theres-more&#34;&gt;There&amp;rsquo;s more&lt;/h1&gt;
+&lt;p&gt;Once I understood the basic concept of the expression language the manpage became a good reference. Check it out to discover other useful tests and actions. Some of my favourite POSIX-specified predicates are &lt;code&gt;-perm&lt;/code&gt;, &lt;code&gt;-user&lt;/code&gt;, and &lt;code&gt;-size&lt;/code&gt;, and I frequently use the GNU extensions &lt;code&gt;-maxdepth&lt;/code&gt;, &lt;code&gt;-mmin&lt;/code&gt;, &lt;code&gt;-regex&lt;/code&gt;, and &lt;code&gt;-ls&lt;/code&gt;. Happy finding.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Failing to write useful mouse keys for X11</title>
+      <link>http://torbiak.com/post/failing_mouse_keys/</link>
+      <pubDate>Tue, 07 Mar 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://torbiak.com/post/failing_mouse_keys/</guid>
+      <description>&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;
+&lt;p&gt;I&amp;rsquo;ve stuck with Apple laptops primarily because I haven&amp;rsquo;t had a pleasant trackpad experience on anything else. But about a year ago I noticed I was spending all my time in a web browser and tmux and had disabled or was avoiding many of OSX&amp;rsquo;s features, like the Dock, Dashboard, full-screen apps (due to the lengthy animations), Spotlight (because &lt;code&gt;mdworker&lt;/code&gt; indexing processes have a history of going out of control and pinning CPUs), and iTunes. So I thought I might as well switch to Linux and the &lt;a href=&#34;http://suckless.org&#34;&gt;suckless.org&lt;/a&gt; desktop (&lt;code&gt;dwm&lt;/code&gt;, &lt;code&gt;dmenu&lt;/code&gt;, &lt;code&gt;st&lt;/code&gt;), as long as I could get the trackpad working well enough.&lt;/p&gt;
+&lt;p&gt;Initially I had the synaptics touchpad driver installed, but after several hours of fruitless tweaking I gave up on making a usable configuration. It seemed impossible to get enough sensitivity while also adequately ignoring accidental touches using the given configuration parameters. So I tried the evdev and libinput drivers and thankfully the libinput driver gives very acceptable behaviour, though it&amp;rsquo;s still a ways off from the magic of Apple&amp;rsquo;s driver, which has never failed to behave as expected when pointing or scrolling.&lt;/p&gt;
+&lt;p&gt;Anyway, all this fussing over trackpads made me wonder if controlling the pointer using the keyboard could be a better experience. An efficient enough mouse keys implementation could also be useful for people with trackpad-specific repetitive strain injuries, or in the admittedly rare situations where both a trackpad and mouse are unavailable or infeasible, like if you wanted to control a media PC with only a keyboard.&lt;/p&gt;
+&lt;h1 id=&#34;existing-solution&#34;&gt;Existing solution&lt;/h1&gt;
+&lt;p&gt;I tried out the keypad pointer keys in X11 (&lt;code&gt;setxkbmap -option keypad:pointerkeys&lt;/code&gt;), but they aren&amp;rsquo;t fluid when changing direction and it&amp;rsquo;s a pain to set up pointer keys on keys other than the keypad. Worst of all, accelerating the pointer after a movement key has been pressed down for a while is counter to how I usually point at things: flinging the pointer over to the general area of my target before carefully zeroing in on it. So I started writing my own, calling it &lt;a href=&#34;https://github.com/torbiak/ptrkeys&#34;&gt;&lt;code&gt;ptrkeys&lt;/code&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;inspiration&#34;&gt;Inspiration&lt;/h1&gt;
+&lt;p&gt;Having decided acceleration was the wrong way to make mouse keys efficient, I tried out some schemes where the speed could be changed instantly. My first idea was to have &amp;ldquo;dual-sticks&amp;rdquo;, two sets of directional keys, one for coarse and the other for fine control, but this was surprisingly difficult to use. It was far more intuitive to use WASD for directional control while using the thumb and pinky or the other hand to change the speed using speed multiplier keys.&lt;/p&gt;
+&lt;p&gt;dwm served as a model for most of the Xlib interactions I needed to do. Its method of defining X11 key bindings at compile time using C99 struct initializations is surprisingly simple and flexible, and using a similar method has allowed me to try out totally different binding schemes with minimal changes.&lt;/p&gt;
+&lt;p&gt;The tricky part was understanding exactly how X11 keyboard grabs work. X generally directs keyboard events to the focused window, but a keyboard can be &amp;ldquo;grabbed&amp;rdquo; as a whole or on a per-key basis so that its events are sent elsewhere. For example, pressing a key implicitly sets up a single-key grab so the subsequent release event is received by the same window that got the keypress. ptrkeys doesn&amp;rsquo;t create a window that can be focused, so a single-key grab is necessary to setup a &amp;ldquo;global hotkey&amp;rdquo; that can be used to enable ptrkeys by grabbing the entire keyboard and thus &amp;ldquo;activating&amp;rdquo; the rest of its configured key bindings.&lt;/p&gt;
+&lt;h1 id=&#34;downfall&#34;&gt;Downfall&lt;/h1&gt;
+&lt;p&gt;Grabs also ended up being the downfall of the project: any full-featured desktop environment grabs the whole keyboard when opening a menu for a taskbar, menubar, or system tray, so that it can be navigated with the keyboard without changing the currently focused window. If ptrkeys already has the keyboard grabbed, the desktop environment&amp;rsquo;s attempt to grab it fails and the menu typically doesn&amp;rsquo;t open. This severely limits the applicability of ptrkeys. And it doesn&amp;rsquo;t seem like there&amp;rsquo;s a way around grabbing the whole keyboard either since a single-key grab becomes a whole-keyboard grab while it&amp;rsquo;s active.&lt;/p&gt;
+&lt;p&gt;So, while &lt;code&gt;ptrkeys&lt;/code&gt; likely isn&amp;rsquo;t useful for anyone using a desktop environment like GNOME, KDE, or XFCE, it might be for those using tiling window managers. &lt;a href=&#34;https://github.com/torbiak/ptrkeys&#34;&gt;Check it out on github&lt;/a&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>File management on Windows with Proto</title>
+      <link>http://torbiak.com/post/proto/</link>
+      <pubDate>Mon, 06 Mar 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://torbiak.com/post/proto/</guid>
+      <description>&lt;p&gt;Dissatisfied with &lt;code&gt;explorer.exe&lt;/code&gt;? Find drag-and-drop and manual window placement tedious? Like using the keyboard? Don&amp;rsquo;t want to choose between the hundreds of Norton Commander clones? You should try &lt;a href=&#34;http://miechu.pl/proto/&#34;&gt;Proto&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Proto is a fast, weird, original, keyboard-controlled file manager written by Mieszko Lassota. You get tabs, incremental subsequence filtering everywhere (eg. &amp;lsquo;mp3&amp;rsquo; matches things like &amp;lsquo;my panda &amp;lt;3&amp;rsquo; and &amp;lsquo;badtimes.mp3&amp;rsquo;), renaming using regexes, an application launcher, and a nifty way to select groups of files, even if they&amp;rsquo;re across filters or directories.&lt;/p&gt;
+&lt;h1 id=&#34;install&#34;&gt;Install&lt;/h1&gt;
+&lt;p&gt;Proto doesn&amp;rsquo;t seem to use the registry so just put it somewhere comfortable and run the executable.&lt;/p&gt;
+&lt;h1 id=&#34;help&#34;&gt;Help&lt;/h1&gt;
+&lt;p&gt;We&amp;rsquo;re on Windows, so press &lt;strong&gt;F1&lt;/strong&gt; to get help in the form of key bindings for the current tab. There are different types of tabs, like file manager, program launcher, calculator, etc., and help is context sensitive, bringing up the commands for the current tab. Type some characters to filter the commands. Press &lt;strong&gt;Escape&lt;/strong&gt; to escape help.&lt;/p&gt;
+&lt;p&gt;Unlike in most of the other tab types which filter by subsequence, in help filtering is done by substring.&lt;/p&gt;
+&lt;h1 id=&#34;invoke&#34;&gt;Invoke&lt;/h1&gt;
+&lt;p&gt;Once it&amp;rsquo;s running you can call up the Proto window by pressing &lt;strong&gt;Alt-`&lt;/strong&gt; (that&amp;rsquo;s a backtick). This key can be changed in &lt;code&gt;$PROTODIR/Settings/Proto.xml&lt;/code&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;tabs&#34;&gt;Tabs&lt;/h1&gt;
+&lt;p&gt;&lt;strong&gt;Ctrl-t&lt;/strong&gt; opens a new file manager tab. &lt;strong&gt;Ctrl-shift-t&lt;/strong&gt; duplicates the current tab. &lt;strong&gt;Shift-return&lt;/strong&gt; opens a directory in a new tab.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Ctrl-w&lt;/strong&gt; closes a tab.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Ctrl-tab&lt;/strong&gt;, &lt;strong&gt;ctrl-shift-tab&lt;/strong&gt;, &lt;strong&gt;ctrl-&amp;lt;arrow&amp;gt;&lt;/strong&gt;, and &lt;strong&gt;ctrl-&amp;lt;number&amp;gt;&lt;/strong&gt; let you select tabs. &lt;strong&gt;Ctrl-shift-&amp;lt;arrow&amp;gt;&lt;/strong&gt; reorders a tab.&lt;/p&gt;
+&lt;h1 id=&#34;navigate&#34;&gt;Navigate&lt;/h1&gt;
+&lt;p&gt;Use the arrow keys to change which item in the tab is highlighted. To descend into a highlighted directory, press &lt;strong&gt;enter&lt;/strong&gt;. Press &lt;strong&gt;backspace&lt;/strong&gt; to go up a directory. Pressing &lt;strong&gt;enter&lt;/strong&gt; will also open a highlighted file with its default program. Press &lt;strong&gt;tab&lt;/strong&gt; to bring up the launcher and open the highlighted item with a different program. If any items are selected they will be opened instead of the highlighted item.&lt;/p&gt;
+&lt;h1 id=&#34;select&#34;&gt;Select&lt;/h1&gt;
+&lt;p&gt;Selected items are prepended by a bullet. If no items are selected the currently highlighted item is used as the selection for commands that take a filepath.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Space&lt;/strong&gt; selects the currently highlighted item. &lt;strong&gt;Ctrl-a&lt;/strong&gt; selects all the items, and pressing it again when everying is already selected deselects everything.  &lt;strong&gt;Alt-a&lt;/strong&gt; toggles between selecting all files and directories. &lt;strong&gt;Shift-down&lt;/strong&gt; selects the current item and highlights the next one. &lt;strong&gt;Shift-right&lt;/strong&gt; behaves similarly, but on columns.&lt;/p&gt;
+&lt;h1 id=&#34;filtering&#34;&gt;Filtering&lt;/h1&gt;
+&lt;p&gt;You can type a few characters to filter the contents of a tab using subsequence search. &lt;strong&gt;Backspace&lt;/strong&gt; does what you&amp;rsquo;d expect. &lt;strong&gt;Ctrl-Backspace&lt;/strong&gt; clears the filter. You can&amp;rsquo;t usually have spaces in your filter because the space key selects the current item in the tab.&lt;/p&gt;
+&lt;h1 id=&#34;file-management&#34;&gt;File management&lt;/h1&gt;
+&lt;p&gt;Cut, copy, and paste behave differently in Proto than they do in Explorer. Copy (&lt;strong&gt;Ctrl-c&lt;/strong&gt;) puts filepaths in the clipboard, and then the clipboard is used as input for the cut and paste commands. Cut (&lt;strong&gt;Ctrl-x&lt;/strong&gt;) moves the files in the clipboard to the tab&amp;rsquo;s current location, while paste (&lt;strong&gt;Ctrl-v&lt;/strong&gt;) copies files. So instead of choosing up front whether you&amp;rsquo;re going to move or copy files like in Explorer, in Proto you first choose which paths you want to work with, and then choose whether to copy or move after navigating to the destination.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Alt-c&lt;/strong&gt; appends the selection to the clipboard.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Delete&lt;/strong&gt; deletes the selection.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Ctrl-n&lt;/strong&gt; creates a new directory. &lt;strong&gt;Ctrl-space&lt;/strong&gt; displays the size of the selection in the lower right.&lt;/p&gt;
+&lt;h1 id=&#34;rename&#34;&gt;Rename&lt;/h1&gt;
+&lt;p&gt;&lt;strong&gt;Ctrl-r&lt;/strong&gt; lets you rename the highlighted item. &lt;strong&gt;Ctrl-Shift-r&lt;/strong&gt; lets you rename the selection using regular expressions. Captured groups can be accessed in the replacement using &lt;code&gt;$1&lt;/code&gt;, &lt;code&gt;$2&lt;/code&gt;, etc.&lt;/p&gt;
+&lt;h1 id=&#34;launcher&#34;&gt;Launcher&lt;/h1&gt;
+&lt;p&gt;The launcher can be invoked from inside or outside of Proto using &lt;strong&gt;Alt-space&lt;/strong&gt;. To get Proto to index the Start Menu so the launcher is useful, ensure &lt;code&gt;settings.links.indexMenuStart&lt;/code&gt; is set to &lt;code&gt;True&lt;/code&gt; in &lt;code&gt;$PROTODIR/Settings/AppLauncher.xml&lt;/code&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;bookmarks&#34;&gt;Bookmarks&lt;/h1&gt;
+&lt;p&gt;&lt;strong&gt;Alt-1&lt;/strong&gt; opens a tab of bookmarks to your favourite directories and files. &lt;strong&gt;Ctrl-b&lt;/strong&gt; adds a bookmark to the highlighted directory.&lt;/p&gt;
+&lt;h1 id=&#34;find&#34;&gt;Find&lt;/h1&gt;
+&lt;p&gt;&lt;strong&gt;Ctrl-f&lt;/strong&gt; searches recursively for files using wildcards (&lt;code&gt;*&lt;/code&gt; and &lt;code&gt;?&lt;/code&gt;) or regular expressions.&lt;/p&gt;
+&lt;p&gt;The grep (&amp;ldquo;Regex search IN files&amp;rdquo;) function doesn&amp;rsquo;t seem to work, unfortunately. It always crashes for me.&lt;/p&gt;
+&lt;h1 id=&#34;other-shortcuts-i-use&#34;&gt;Other shortcuts I use&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Ctrl-s&lt;/strong&gt;: Change sort key.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Ctrl-.&lt;/strong&gt;: Open the windows context menu.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Ctrl-End&lt;/strong&gt;: Kill proto job, such as calculating file size. The current job shows up in the lower left corner of the Proto window.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Ctrl-h&lt;/strong&gt;: edit text file, quickview image (use arrows for folder slideshow)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Ctrl-g&lt;/strong&gt;: disk space chart&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
